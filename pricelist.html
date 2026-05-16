@@ -1,0 +1,3142 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <!-- TAMBAHAN PENTING: Mencegah server gambar memblokir akses (Bypass 403 Forbidden) -->
+    <meta name="referrer" content="no-referrer">
+    <title>Pencarian File Excel</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Font Awesome for icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <style>
+        /* Custom font for better readability */
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f3f4f6; /* Light gray background */
+        }
+        /* Custom scrollbar for table */
+        .table-container::-webkit-scrollbar {
+            height: 8px;
+            width: 8px;
+        }
+        .table-container::-webkit-scrollbar-track {
+            background: #e2e8f0;
+            border-radius: 10px;
+        }
+        .table-container::-webkit-scrollbar-thumb {
+            background: #94a3b8;
+            border-radius: 10px;
+        }
+        .table-container::-webkit-scrollbar-thumb:hover {
+            background: #64748b;
+        }
+        /* Style for the custom dialog boxes */
+        .dialog-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: rgba(0, 0, 0, 0.5);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 999;
+            padding: 1rem; /* Tambahan padding agar dialog tidak mentok tepi layar HP */
+        }
+        .dialog-box {
+            background-color: white;
+            padding: 1.5rem; /* Kurangi padding dari 2rem ke 1.5rem untuk HP */
+            border-radius: 0.75rem;
+            box-shadow: 0 10px 15px rgba(0, 0, 0, 0.1);
+            text-align: center;
+            max-width: 100%; /* Ubah dari 90% ke 100% untuk fleksibilitas di layar kecil */
+            width: 420px;
+            word-wrap: break-word;
+            max-height: 90vh; /* Tambahkan agar bisa discroll jika terlalu tinggi */
+            overflow-y: auto;
+        }
+        .dialog-box {
+            background-color: white;
+            padding: 2rem;
+            border-radius: 0.75rem;
+            box-shadow: 0 10px 15px rgba(0, 0, 0, 0.1);
+            text-align: center;
+            max-width: 90%;
+            width: 420px;
+            word-wrap: break-word;
+        }
+        .dialog-box .dialog-buttons {
+            margin-top: 1.5rem;
+            display: flex;
+            justify-content: center;
+            gap: 1rem;
+        }
+        .dialog-box button {
+            padding: 0.5rem 1rem;
+            border: none;
+            border-radius: 0.375rem;
+            cursor: pointer;
+            font-weight: 600;
+            transition: background-color 0.2s, transform 0.1s;
+        }
+        .dialog-box button:active {
+             transform: scale(0.95);
+        }
+        .dialog-btn-confirm {
+            background-color: #ef4444; /* red-500 */
+            color: white;
+        }
+        .dialog-btn-confirm:hover {
+            background-color: #dc2626; /* red-600 */
+        }
+        .dialog-btn-add {
+            background-color: #2563eb; /* blue-600 */
+            color: white;
+        }
+        .dialog-btn-add:hover {
+            background-color: #1d4ed8; /* blue-700 */
+        }
+        .dialog-btn-cancel {
+            background-color: #e5e7eb; /* gray-200 */
+            color: #1f2937; /* gray-800 */
+        }
+        .dialog-btn-cancel:hover {
+            background-color: #d1d5db; /* gray-300 */
+        }
+        .dialog-btn-ok {
+             background-color: #3b82f6;
+             color: white;
+        }
+        .dialog-btn-ok:hover {
+             background-color: #2563eb;
+        }
+        .dialog-box .dialog-input-group {
+            text-align: left;
+            margin-top: 1rem;
+        }
+        .dialog-box .dialog-input-group label {
+            display: block;
+            margin-bottom: 0.25rem;
+            font-size: 0.875rem;
+            font-weight: 500;
+            color: #4b5563; /* gray-600 */
+        }
+        .dialog-box .dialog-input-group input {
+            width: 100%;
+            padding: 0.5rem;
+            border: 1px solid #d1d5db; /* gray-300 */
+            border-radius: 0.375rem;
+        }
+
+        /* Toast Notification Styles */
+        .toast-notification {
+            position: fixed;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background-color: #28a745; /* Green for success */
+            color: white;
+            padding: 1rem 1.5rem;
+            border-radius: 0.5rem;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            z-index: 2000;
+            opacity: 1;
+            transition: opacity 0.5s, bottom 0.5s;
+        }
+
+        .toast-notification.fade-out {
+            opacity: 0;
+            bottom: 0px;
+        }
+
+        /* Pagination buttons disabled style */
+        .pagination-button:disabled {
+            background-color: #9ca3af; /* gray-400 */
+            cursor: not-allowed;
+        }
+        
+        /* Calculator styles */
+        .calculator {
+            margin-top: 1rem;
+            border: 1px solid #d1d5db;
+            border-radius: 0.5rem;
+            padding: 0.75rem;
+            background-color: #f9fafb;
+            height: 100%;
+        }
+        .calculator-display {
+            width: 100%;
+            background-color: #e5e7eb;
+            border: 1px solid #d1d5db;
+            border-radius: 0.375rem;
+            padding: 0.5rem 0.75rem;
+            text-align: right;
+            font-size: 1.5rem;
+            font-family: monospace;
+            margin-bottom: 0.75rem;
+        }
+        .calculator-buttons {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 0.5rem;
+        }
+        .calculator-buttons button {
+            padding: 0.6rem 0; /* Kurangi padding tombol kalkulator agar muat di HP kecil */
+            font-size: 1.125rem;
+            font-weight: 600;
+            border-radius: 0.375rem;
+            border: 1px solid transparent;
+            transition: background-color 0.2s, transform 0.1s;
+        }
+         .calculator-buttons button:active {
+            transform: scale(0.95);
+        }
+        .calc-btn-num {
+             background-color: #fff;
+             border-color: #d1d5db;
+        }
+        .calc-btn-num:hover {
+            background-color: #f3f4f6;
+        }
+        .calc-btn-op {
+            background-color: #fde68a; /* yellow-200 */
+            color: #92400e; /* yellow-800 */
+        }
+        .calc-btn-op:hover {
+            background-color: #fcd34d; /* yellow-300 */
+        }
+        .calc-btn-eq {
+             background-color: #60a5fa; /* blue-400 */
+             color: white;
+        }
+        .calc-btn-eq:hover {
+             background-color: #3b82f6; /* blue-500 */
+        }
+         .calc-btn-c {
+             background-color: #fca5a5; /* red-300 */
+             color: #991b1b; /* red-800 */
+        }
+        .calc-btn-c:hover {
+            background-color: #f87171; /* red-400 */
+        }
+        
+        /* Gaya khusus untuk tombol Hapus (Delete/Backspace) */
+        .calc-btn-del {
+            background-color: #fdba74; /* orange-300 */
+            color: #9a3412; /* orange-800 */
+        }
+        .calc-btn-del:hover {
+            background-color: #fb923c; /* orange-400 */
+        }
+
+        /* Tampilan Mode Cetak (Print) Khusus Katalog */
+        @media print {
+            body { background-color: white; padding: 0 !important; }
+            body * { visibility: hidden; }
+            #catalogSection, #catalogSection * { visibility: visible; }
+            #catalogSection { position: absolute; left: 0; top: 0; width: 100%; padding: 0 !important; margin: 0 !important; }
+            .no-print { display: none !important; }
+            .catalog-card { break-inside: avoid; border: 1px solid #e5e7eb; page-break-inside: avoid; }
+            .catalog-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1rem; }
+        }
+
+        /* Tampilan Mobile: Ubah Tabel menjadi bentuk "Kartu" Modern & Ringkas */
+        @media (max-width: 768px) {
+            #resultsTable, #resultsTable thead, #resultsTable tbody, #resultsTable th, #resultsTable td, #resultsTable tr {
+                display: block;
+                width: 100%;
+            }
+            
+            /* Sembunyikan baris judul tabel utama secara visual */
+            #resultsTable thead tr {
+                position: absolute;
+                top: -9999px;
+                left: -9999px;
+            }
+            
+            /* Kartu Utama - Lebih compact dan modern */
+            #resultsTable tr {
+                background-color: #ffffff;
+                border-radius: 0.75rem;
+                box-shadow: 0 2px 10px -2px rgba(0, 0, 0, 0.1);
+                margin-bottom: 1rem;
+                padding: 0.75rem 1rem; /* Diperbarui: Padding sedikit lebih rapat */
+                display: flex; /* Gunakan flex untuk mengontrol layout dalam kartu */
+                flex-wrap: wrap;
+                justify-content: space-between;
+                border: 1px solid #e5e7eb;
+                position: relative; /* Penting untuk penempatan tombol absolute */
+                cursor: pointer; /* Indikator bisa diklik */
+                transition: background-color 0.2s ease;
+            }
+            #resultsTable tr:active {
+                background-color: #f9fafb; /* Efek saat ditekan */
+            }
+            
+            /* Atur gaya default untuk setiap baris data (Modal, Retail, dll) */
+            #resultsTable td {
+                border: none;
+                padding: 0.4rem 0 !important; /* Padding vertikal jauh lebih tipis */
+                text-align: right !important;
+                white-space: normal !important;
+                font-size: 0.875rem;
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                width: 100%;
+            }
+            
+            /* Sisipkan judul kolom melalui atribut 'data-label' */
+            #resultsTable td::before {
+                content: attr(data-label); 
+                font-weight: 600;
+                color: #6b7280; /* abu-abu */
+                text-align: left;
+                font-size: 0.8rem;
+                margin-right: 1rem;
+            }
+            
+            /* 1. Kolom Aksi (Tombol Tambah) -> Melayang di Kanan Atas */
+            #resultsTable td:nth-child(1) {
+                position: absolute;
+                top: 0.75rem; /* Disesuaikan dengan padding baru */
+                right: 1rem;
+                width: auto;
+                padding: 0 !important;
+                z-index: 10; /* Tambahan agar tidak tertimpa teks */
+            }
+            #resultsTable td:nth-child(1)::before {
+                display: none; /* Hilangkan teks "Aksi" */
+            }
+            
+            /* 2. Kolom Nama Barang -> Judul Kartu Utama */
+            #resultsTable td:nth-child(2) {
+                width: calc(100% - 85px); /* DIPERBESAR JARAKNYA: agar tidak nabrak tombol Tambah */
+                text-align: left !important;
+                font-size: 0.85rem !important; /* DIKECILKAN UKURAN FONTNYA */
+                font-weight: 700;
+                color: #111827;
+                padding: 0 !important;
+                margin-bottom: 0.2rem;
+                border-bottom: none !important; /* Dihapus dari default */
+                display: block; /* Kembali ke block agar teks panjang turun alami */
+                line-height: 1.4;
+            }
+            #resultsTable td:nth-child(2)::before {
+                display: none; /* Sembunyikan label "Nama Barang" karena sudah jelas */
+            }
+
+            /* --- FITUR COLLAPSIBLE MOBILE --- */
+            /* Teks Bantuan "Lihat Detail" untuk Toggle (Mobile) */
+            #resultsTable tr.mobile-collapsed td:nth-child(2)::after {
+                content: '▼   Lihat Detail';
+                font-family: 'Inter', sans-serif;
+                font-weight: 600;
+                display: block;
+                text-align: left;
+                color: #4b5563;
+                font-size: 0.75rem;
+                margin-top: 0.6rem;
+            }
+            #resultsTable tr:not(.mobile-collapsed) td:nth-child(2)::after {
+                content: '▲   Tutup';
+                font-family: 'Inter', sans-serif;
+                font-weight: 600;
+                display: block;
+                text-align: left;
+                color: #4b5563;
+                font-size: 0.75rem;
+                margin-top: 0.6rem;
+                padding-bottom: 0.5rem;
+                border-bottom: 1px dashed #e5e7eb;
+            }
+            
+            /* Sembunyikan semua kolom ke-3 dan seterusnya saat collapsed */
+            #resultsTable tr.mobile-collapsed td:nth-child(n+3) {
+                display: none !important;
+            }
+            /* -------------------------------- */
+            
+            /* 3 & 4. Blok Harga dan Stok -> Grid Kotak-kotak Kecil */
+            #resultsTable td:nth-child(3),
+            #resultsTable td:nth-child(4),
+            #resultsTable td:nth-child(5),
+            #resultsTable td:nth-child(6),
+            #resultsTable td:nth-child(7),
+            #resultsTable td:nth-child(8),
+            #resultsTable td:nth-child(9),
+            #resultsTable td:nth-child(10) {
+                width: 48%; /* Lebar setengah dikurangi sedikit untuk celah tengah */
+                flex-direction: column; /* Posisi label di atas, angka di bawah */
+                align-items: flex-start;
+                text-align: left !important;
+                background-color: #ffffff; /* Latar putih untuk harga agar beda dengan stok */
+                padding: 0.6rem !important;
+                border-radius: 0.5rem;
+                margin-top: 0.5rem;
+                border: 1px solid #e5e7eb;
+                box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05); /* Sedikit bayangan agar pop-up */
+            }
+
+            /* Latar abu-abu terang dan tanpa bayangan untuk kotak stok agar lebih redup */
+            #resultsTable td:nth-child(7),
+            #resultsTable td:nth-child(8),
+            #resultsTable td:nth-child(9) {
+                background-color: #f9fafb;
+                box-shadow: none;
+            }
+            
+            #resultsTable td:nth-child(3)::before,
+            #resultsTable td:nth-child(4)::before,
+            #resultsTable td:nth-child(5)::before,
+            #resultsTable td:nth-child(6)::before,
+            #resultsTable td:nth-child(7)::before,
+            #resultsTable td:nth-child(8)::before,
+            #resultsTable td:nth-child(9)::before,
+            #resultsTable td:nth-child(10)::before {
+                margin-right: 0;
+                margin-bottom: 0.2rem;
+                font-size: 0.65rem;
+                text-transform: uppercase;
+                letter-spacing: 0.05em;
+                color: #6b7280;
+            }
+
+            /* Font & Warna khusus untuk Modal (Harga khusus karena bisa diklik) */
+            #resultsTable td:nth-child(3) {
+                font-weight: 700;
+                font-size: 0.95rem;
+                border-color: #c7d2fe; /* border indigo-200 */
+                background-color: #e0e7ff; /* Latar indigo tipis untuk menandakan tombol */
+            }
+
+            /* Font untuk harga biasa (Retail, Grosir) */
+            #resultsTable td:nth-child(4),
+            #resultsTable td:nth-child(6) {
+                font-weight: 700;
+                color: #111827;
+                font-size: 0.95rem;
+            }
+
+            /* Font untuk angka stok biasa */
+            #resultsTable td:nth-child(7),
+            #resultsTable td:nth-child(8),
+            #resultsTable td:nth-child(9) {
+                font-weight: 600;
+                color: #374151;
+                font-size: 1rem;
+            }
+
+            /* Highlight Cash Back warna hijau cerah */
+            #resultsTable td:nth-child(5) {
+                background-color: #f0fdf4;
+                border-color: #bbf7d0;
+                color: #16a34a;
+                font-weight: 700;
+                font-size: 0.95rem;
+            }
+            #resultsTable td:nth-child(5)::before {
+                color: #15803d;
+            }
+
+            /* Highlight biru khusus untuk Stok Total agar paling mencolok */
+            #resultsTable td:nth-child(10) {
+                background-color: #eff6ff;
+                border-color: #bfdbfe;
+                color: #1d4ed8;
+                font-weight: 700;
+                font-size: 1.1rem;
+            }
+            #resultsTable td:nth-child(10)::before {
+                color: #2563eb;
+            }
+        }
+    </style>
+</head>
+<body class="p-4 sm:p-6 lg:p-8">
+    <div class="max-w-7xl mx-auto bg-white p-6 sm:p-8 rounded-xl shadow-lg border border-gray-200 flex flex-col">
+        <div class="flex flex-col sm:flex-row justify-between items-center mb-4 sm:mb-6 gap-3 sm:gap-4 relative order-none">
+            <h1 id="appTitle" class="text-lg sm:text-2xl md:text-3xl font-bold text-gray-800 text-center flex-1 w-full break-words leading-snug">Pencarian Data Excel</h1>
+            <button id="gantiDataBtn" class="hidden inline-flex items-center justify-center bg-gray-500 hover:bg-gray-600 text-white font-semibold text-xs sm:text-base py-1.5 px-3 sm:py-2 sm:px-4 rounded-lg shadow-md transition duration-200 ease-in-out sm:absolute sm:right-0">
+                <i class="fas fa-file-excel mr-1.5 sm:mr-2"></i>Ganti Data
+            </button>
+        </div>
+
+        <!-- File Upload Section -->
+        <div id="fileUploadSection" class="mb-6 p-4 border border-blue-200 rounded-lg bg-blue-50 order-none">
+            <label for="excelFile" class="block text-lg font-medium text-blue-800 mb-2">Unggah File Excel (.xlsx, .xls)</label>
+            <input type="file" id="excelFile" accept=".xlsx, .xls" class="w-full text-gray-700 bg-white border border-gray-300 rounded-lg py-2 px-3 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition duration-200 ease-in-out">
+            <p class="text-sm text-blue-600 mt-2">Pilih file Excel Anda untuk memulai.</p>
+        </div>
+
+        <!-- Combined Search, Filter, and Sort Section - Initially hidden -->
+        <div id="searchFilterContainer" class="hidden order-2 md:order-1 mt-6 md:mt-0">
+            <div class="bg-white border border-gray-200 rounded-xl shadow-sm p-4 mb-6 md:bg-transparent md:border-0 md:shadow-none md:p-0 md:mb-0">
+                
+                <!-- Desktop Search Container -->
+                <div id="desktopSearchContainer" class="hidden md:block w-full mb-6">
+                    <!-- Komponen Pencarian Universal (Akan dipindah ke FAB di Mobile) -->
+                    <div id="searchComponent" class="relative flex flex-col w-full">
+                        <div class="relative flex items-center w-full p-2 md:p-0 border-b border-gray-100 md:border-none">
+                            <div class="absolute inset-y-0 left-0 pl-4 md:pl-3 flex items-center pointer-events-none">
+                                <i class="fas fa-search text-blue-500 md:text-gray-400"></i>
+                            </div>
+                            <input type="text" id="searchQuery" placeholder="Ketik kata kunci pencarian..." class="w-full pl-11 pr-10 py-3 md:py-2.5 bg-transparent md:bg-gray-50 md:border md:border-gray-300 text-gray-900 md:rounded-lg focus:outline-none md:focus:ring-2 md:focus:ring-blue-500 md:focus:border-blue-500 placeholder-gray-400 text-sm sm:text-base font-medium transition md:shadow-inner">
+                            
+                            <!-- Tombol Riwayat -->
+                            <div class="absolute inset-y-0 right-2 md:right-0 md:pr-1 flex items-center">
+                                <button id="btnHistory" class="p-2 text-gray-500 hover:text-blue-600 focus:outline-none transition" title="Riwayat Pencarian">
+                                    <i class="fas fa-history text-lg"></i>
+                                </button>
+                            </div>
+                        </div>
+                        
+                        <!-- Dropdown Riwayat -->
+                        <div id="historyDropdown" class="hidden md:absolute md:z-50 md:left-0 md:w-full lg:w-96 md:top-full md:mt-1 bg-gray-50 md:bg-white md:rounded-lg rounded-b-2xl shadow-none md:shadow-xl border-none md:border md:border-gray-200 overflow-hidden max-h-60 md:max-h-[300px] overflow-y-auto">
+                            <div class="p-3 md:p-2 bg-gray-100 md:bg-gray-50 border-b border-gray-200 flex justify-between items-center sticky top-0 z-10">
+                                <span class="text-xs font-bold text-gray-600 md:text-gray-500 uppercase tracking-wider">Riwayat Terakhir</span>
+                                <button id="btnClearHistory" class="text-xs text-red-500 hover:text-red-700 font-semibold transition bg-red-50 md:bg-transparent px-2 md:px-0 py-1 md:py-0 rounded">Hapus</button>
+                            </div>
+                            <ul id="historyList" class="md:max-h-48 md:overflow-y-auto">
+                                <!-- List riwayat akan masuk ke sini melalui JavaScript -->
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Tombol Toggle Filter (Khusus Mobile) -->
+                <button id="btnToggleFilter" class="md:hidden w-full bg-blue-50 hover:bg-blue-100 text-blue-700 border border-blue-200 py-3 px-4 mb-4 rounded-lg font-semibold flex items-center justify-center transition">
+                    <i class="fas fa-sliders-h mr-2"></i>Filter & Urutan Menu
+                </button>
+
+                <!-- Panel Filter, Urutan & Aksi (Collapsible di Mobile, Tampil Penuh di Desktop) -->
+                <div id="panelFilter" class="hidden md:block transition-all duration-300 border-t border-gray-100 md:border-t-0">
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-6">
+                        
+                        <!-- Stock Filter Section -->
+                        <div class="p-3 md:p-4 bg-blue-50 md:bg-transparent border border-blue-200 md:border-gray-200 md:bg-blue-50/30 rounded-xl shadow-sm">
+                            <label class="block text-sm md:text-lg font-medium text-blue-800 mb-2">Filter Stok</label>
+                            <div class="grid grid-cols-2 gap-3">
+                                <div>
+                                     <label for="stokLocationSelect" class="block text-xs font-semibold text-gray-600 mb-1">Lokasi:</label>
+                                    <select id="stokLocationSelect" class="w-full bg-white border border-gray-300 text-gray-700 text-sm rounded-lg py-2 px-2 focus:outline-none focus:ring-2 focus:ring-blue-500 transition">
+                                        <option value="Stok Total">Semua</option>
+                                        <option value="Stok Solo">Solo</option>
+                                        <option value="Stok Sukoharjo">Sukoharjo</option>
+                                        <option value="Stok Sragen">Sragen</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label for="stokTotalMin" class="block text-xs font-semibold text-gray-600 mb-1">Stok Min:</label>
+                                    <input type="number" id="stokTotalMin" placeholder="10" class="w-full bg-white border border-gray-300 text-gray-700 text-sm rounded-lg py-2 px-2 focus:outline-none focus:ring-2 focus:ring-blue-500 transition">
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Sort Section -->
+                        <div class="p-3 md:p-4 bg-purple-50 md:bg-transparent border border-purple-200 md:border-gray-200 md:bg-purple-50/30 rounded-xl shadow-sm">
+                            <label class="block text-sm md:text-lg font-medium text-purple-800 mb-2">Urutkan Harga</label>
+                            <div class="grid grid-cols-2 gap-3">
+                                <div>
+                                    <label for="sortColumn" class="block text-xs font-semibold text-gray-600 mb-1">Kolom:</label>
+                                    <select id="sortColumn" class="w-full bg-white border border-gray-300 text-gray-700 text-sm rounded-lg py-2 px-2 focus:outline-none focus:ring-2 focus:ring-purple-500 transition">
+                                        <option value="">Tidak</option>
+                                        <option value="Modal">Modal</option>
+                                        <option value="Retail">Retail</option>
+                                        <option value="Grosir">Grosir</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label for="sortOrder" class="block text-xs font-semibold text-gray-600 mb-1">Urutan:</label>
+                                    <select id="sortOrder" class="w-full bg-white border border-gray-300 text-gray-700 text-sm rounded-lg py-2 px-2 focus:outline-none focus:ring-2 focus:ring-purple-500 transition">
+                                        <option value="asc">Termurah</option>
+                                        <option value="desc">Termahal</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Action Buttons -->
+                        <div class="flex flex-col gap-3 justify-end md:pb-0">
+                            <button id="checkProfitButton" class="w-full bg-yellow-500 hover:bg-yellow-600 text-white font-semibold py-2.5 px-4 rounded-lg shadow-sm transition duration-200 focus:outline-none focus:ring-2 focus:ring-yellow-500 text-sm flex items-center justify-center">
+                                <i class="fas fa-exclamation-triangle mr-2"></i>Cek Profit < 5%
+                            </button>
+                            <button id="clearSearchButton" class="w-full bg-red-500 hover:bg-red-600 text-white font-semibold py-2.5 px-4 rounded-lg shadow-sm transition duration-200 focus:outline-none focus:ring-2 focus:ring-red-500 text-sm flex items-center justify-center">
+                                <i class="fas fa-undo mr-2"></i>Reset Filter & Urutan
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Loading Indicator -->
+        <div id="loadingIndicator" class="hidden text-center py-4 order-3 md:order-2">
+            <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500 mx-auto"></div>
+            <p class="text-gray-600 mt-2">Memuat dan memproses file Excel...</p>
+        </div>
+
+        <!-- Results Display Section -->
+        <div id="resultsSection" class="mt-4 md:mt-8 hidden order-1 md:order-3">
+            <div class="hidden md:flex flex-wrap justify-between items-center mb-4 gap-4">
+                <h2 class="text-2xl font-bold text-gray-800">Hasil Pencarian (<span id="resultCount">0</span>)</h2>
+                <div class="flex gap-2 flex-wrap">
+                    <button id="toggleColumnsButton" class="bg-gray-600 hover:bg-gray-700 text-white font-bold py-2 px-4 rounded-lg shadow-md transition duration-200 ease-in-out">
+                        <i class="fas fa-columns mr-2"></i>Kolom
+                    </button>
+                    <button id="exportFilteredButton" class="bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-2 px-4 rounded-lg shadow-md transition duration-200 ease-in-out">
+                        <i class="fas fa-layer-group mr-2"></i>Aksi Massal
+                    </button>
+                </div>
+            </div>
+            <div class="table-container overflow-x-auto border border-gray-300 rounded-lg shadow-inner max-h-96">
+                <table id="resultsTable" class="min-w-full divide-y divide-gray-200 bg-white">
+                    <thead class="bg-gray-100 sticky top-0">
+                        <tr id="tableHeader" class="text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            <!-- Headers will be inserted here by JavaScript -->
+                        </tr>
+                    </thead>
+                    <tbody id="tableBody" class="divide-y divide-gray-200">
+                        <!-- Search results will be inserted here by JavaScript -->
+                    </tbody>
+                </table>
+            </div>
+            <!-- Pagination Controls (DIUBAH) -->
+            <div id="paginationControls" class="hidden flex justify-between items-center mt-4 gap-2">
+                <button id="prevPageButton" class="pagination-button bg-blue-500 hover:bg-blue-600 text-white font-bold py-1.5 px-3 text-xs sm:text-sm sm:py-2 sm:px-4 rounded-lg shadow-md transition duration-200 flex flex-row items-center whitespace-nowrap">
+                    <i class="fas fa-arrow-left mr-1.5 sm:mr-2"></i>Sebelumnya
+                </button>
+                <span id="pageInfo" class="text-gray-700 font-medium text-xs sm:text-sm text-center"></span>
+                <button id="nextPageButton" class="pagination-button bg-blue-500 hover:bg-blue-600 text-white font-bold py-1.5 px-3 text-xs sm:text-sm sm:py-2 sm:px-4 rounded-lg shadow-md transition duration-200 flex flex-row items-center whitespace-nowrap">
+                    Selanjutnya<i class="fas fa-arrow-right ml-1.5 sm:ml-2"></i>
+                </button>
+            </div>
+        </div>
+
+        <!-- Shopping List Section -->
+        <div id="shoppingListSection" class="mt-10 hidden order-4">
+             <div class="flex flex-wrap justify-between items-center mb-4 gap-4">
+                <h2 class="text-2xl font-bold text-gray-800">List Barang (<span id="shoppingListCount">0</span>)</h2>
+                <div class="flex items-center gap-2 flex-wrap">
+                    <button id="createCatalogButton" class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 px-4 rounded-lg shadow-md transition duration-200 ease-in-out">
+                        <i class="fas fa-book-open mr-2"></i>Buat Katalog
+                    </button>
+                    <button id="addDiscountButton" class="bg-purple-600 hover:bg-purple-700 text-white font-bold py-2 px-4 rounded-lg shadow-md transition duration-200 ease-in-out">
+                        <i class="fas fa-tags mr-2"></i>Tambah Potongan
+                    </button>
+                    <button id="clearListButton" class="bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-4 rounded-lg shadow-md transition duration-200 ease-in-out">
+                        <i class="fas fa-trash-alt mr-2"></i>Hapus Semua
+                    </button>
+                    <button id="exportListButton" class="bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded-lg shadow-md transition duration-200 ease-in-out">
+                        <i class="fas fa-file-excel mr-2"></i>Ekspor ke Excel
+                    </button>
+                </div>
+            </div>
+            <div class="overflow-x-auto border border-gray-300 rounded-lg shadow-inner">
+                <table class="min-w-full divide-y divide-gray-200 bg-white">
+                    <thead class="bg-gray-100">
+                        <tr>
+                            <!-- Hapus whitespace-nowrap pada Nama Barang agar bisa turun baris -->
+                            <th class="py-3 px-2 sm:px-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Nama Barang / Potongan</th>
+                            <th class="py-3 px-2 sm:px-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-24 whitespace-nowrap">Kuantitas</th>
+                            <th class="py-3 px-2 sm:px-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-40 whitespace-nowrap">Harga</th>
+                            <th class="py-3 px-2 sm:px-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider whitespace-nowrap">Aksi</th>
+                        </tr>
+                    </thead>
+                    <tbody id="shoppingListBody" class="divide-y divide-gray-200">
+                        <!-- Shopping list items will be inserted here -->
+                    </tbody>
+                    <tfoot id="shoppingListFooter" class="bg-gray-50 border-t-2 border-gray-300">
+                        <!-- Total will be dynamically inserted here -->
+                    </tfoot>
+                </table>
+            </div>
+        </div>
+
+        <!-- Catalog Section -->
+        <div id="catalogSection" class="mt-8 hidden w-full order-5">
+            <div class="flex flex-wrap justify-between items-center mb-6 no-print bg-white p-4 rounded-lg shadow-sm border border-gray-200 gap-4">
+                <h2 class="text-3xl font-bold text-gray-800"><i class="fas fa-images mr-3 text-indigo-500"></i>Katalog Produk</h2>
+                <div class="flex flex-wrap gap-2">
+                    <button id="autoFetchAllButton" class="bg-yellow-500 hover:bg-yellow-600 text-white font-bold py-2 px-4 rounded-lg shadow-md transition duration-200">
+                        <i class="fas fa-magic mr-2"></i>Auto Cari Semua
+                    </button>
+                    <!-- Tombol Baru untuk Ganti Background -->
+                    <button id="changeBgButton" class="bg-pink-600 hover:bg-pink-700 text-white font-bold py-2 px-4 rounded-lg shadow-md transition duration-200">
+                        <i class="fas fa-image mr-2"></i>Ganti Background
+                    </button>
+                    <input type="file" id="bgFileInput" accept="image/*" class="hidden">
+                    
+                    <button id="backFromCatalogButton" class="bg-gray-500 hover:bg-gray-600 text-white font-bold py-2 px-4 rounded-lg transition duration-200">
+                        <i class="fas fa-arrow-left mr-2"></i>Kembali
+                    </button>
+                    <button id="printCatalogButton" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-lg shadow-md transition duration-200">
+                        <i class="fas fa-print mr-2"></i>Cetak Katalog
+                    </button>
+                </div>
+            </div>
+            
+            <!-- Information Alert -->
+            <div class="bg-blue-50 border-l-4 border-blue-500 p-4 mb-6 no-print rounded-r-lg">
+                <div class="flex">
+                    <div class="flex-shrink-0"><i class="fas fa-info-circle text-blue-500"></i></div>
+                    <div class="ml-3">
+                        <p class="text-sm text-blue-700">
+                            <strong>Cara mencetak dengan Background:</strong> Klik tombol <strong class="text-pink-600">Ganti Background</strong> untuk mengunggah gambar latar belakang kop surat Anda. Gambar tersebut akan tersimpan otomatis sebagai default cetakan Anda.
+                        </p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Catalog Grid Container -->
+            <div id="catalogGrid" class="catalog-grid grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4 sm:gap-6">
+                <!-- Catalog Cards will be inserted here by JavaScript -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Floating Search Container -->
+    <div id="floatingSearchContainer" class="fixed bottom-6 right-6 z-[100] hidden md:hidden">
+        <!-- Search Panel (Pops up above the FAB) -->
+        <div id="floatingSearchPanel" class="absolute bottom-16 right-0 mb-4 bg-white rounded-2xl shadow-2xl border border-gray-200 transition-all duration-300 transform translate-y-8 opacity-0 pointer-events-none w-[calc(100vw-3rem)] sm:w-96 flex flex-col origin-bottom-right">
+            
+            <!-- Mobile Search Container -->
+            <div id="mobileSearchContainer" class="w-full"></div>
+            
+        </div>
+
+        <!-- FAB Search Toggle -->
+        <button id="fabSearchToggle" class="absolute bottom-0 right-0 bg-blue-600 hover:bg-blue-700 text-white rounded-full w-14 h-14 shadow-xl flex items-center justify-center transition-transform hover:scale-105 focus:outline-none focus:ring-4 focus:ring-blue-300">
+            <i id="fabSearchIcon" class="fas fa-search text-2xl transition-transform duration-300"></i>
+        </button>
+    </div>
+
+    <!-- Script for XLSX library -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+
+    <script>
+        // Global variables
+        let excelData = [];
+        let shoppingList = [];
+        let currentResults = [];
+        let currentPage = 1;
+        const rowsPerPage = 50;
+        let isLowProfitFilterActive = false; // State for profit filter
+        let hiddenColumnIndices = new Set(); // State untuk kolom yang disembunyikan
+
+        // DIUBAH: Menghapus 'Cash Back Grosir' dari fixedHeaders
+        const fixedHeaders = [
+            'Aksi', 'Nama Barang', 'Modal', 'Retail', 'Cash Back', 'Grosir',
+            'Stok Solo', 'Stok Sukoharjo', 'Stok Sragen', 'Stok Total'
+        ];
+        
+        // Note: Column indices are now shifted by 1 because of 'Aksi'
+        const currencyColumnIndices = [
+            fixedHeaders.indexOf('Modal'), fixedHeaders.indexOf('Retail'),
+            fixedHeaders.indexOf('Cash Back'), fixedHeaders.indexOf('Grosir')
+        ].filter(index => index !== -1);
+        
+        const namaBarangColumnIndex = fixedHeaders.indexOf('Nama Barang');
+        // Get all stock column indices by name
+        const stokColumnIndices = {
+            'Stok Solo': fixedHeaders.indexOf('Stok Solo'),
+            'Stok Sukoharjo': fixedHeaders.indexOf('Stok Sukoharjo'),
+            'Stok Sragen': fixedHeaders.indexOf('Stok Sragen'),
+            'Stok Total': fixedHeaders.indexOf('Stok Total')
+        };
+        const modalColumnIndex = fixedHeaders.indexOf('Modal');
+        const cashBackColumnIndex = fixedHeaders.indexOf('Cash Back');
+        const retailColumnIndex = fixedHeaders.indexOf('Retail');
+        const grosirColumnIndex = fixedHeaders.indexOf('Grosir');
+
+        // UI Element References
+        const appTitle = document.getElementById('appTitle');
+        const fileUploadSection = document.getElementById('fileUploadSection');
+        const searchFilterContainer = document.getElementById('searchFilterContainer');
+        const excelFileInput = document.getElementById('excelFile');
+        const searchQueryInput = document.getElementById('searchQuery');
+        const clearSearchButton = document.getElementById('clearSearchButton');
+        const checkProfitButton = document.getElementById('checkProfitButton');
+        const loadingIndicator = document.getElementById('loadingIndicator');
+        const resultsSection = document.getElementById('resultsSection');
+        const exportFilteredButton = document.getElementById('exportFilteredButton');
+        const toggleColumnsButton = document.getElementById('toggleColumnsButton');
+        const tableHeader = document.getElementById('tableHeader');
+        const tableBody = document.getElementById('tableBody');
+        const resultCountSpan = document.getElementById('resultCount');
+        const stokTotalMinInput = document.getElementById('stokTotalMin');
+        const stokLocationSelect = document.getElementById('stokLocationSelect');
+        const sortColumnSelect = document.getElementById('sortColumn');
+        const sortOrderSelect = document.getElementById('sortOrder');
+        const shoppingListSection = document.getElementById('shoppingListSection');
+        const shoppingListBody = document.getElementById('shoppingListBody');
+        const shoppingListCount = document.getElementById('shoppingListCount');
+        const shoppingListFooter = document.getElementById('shoppingListFooter');
+        const exportListButton = document.getElementById('exportListButton');
+        const clearListButton = document.getElementById('clearListButton');
+        const addDiscountButton = document.getElementById('addDiscountButton');
+        const paginationControls = document.getElementById('paginationControls');
+        const prevPageButton = document.getElementById('prevPageButton');
+        const nextPageButton = document.getElementById('nextPageButton');
+        const pageInfo = document.getElementById('pageInfo');
+        
+        // --- TAMBAHAN ELEMEN BARU ---
+        const gantiDataBtn = document.getElementById('gantiDataBtn');
+        const btnToggleFilter = document.getElementById('btnToggleFilter');
+        const panelFilter = document.getElementById('panelFilter');
+        const btnHistory = document.getElementById('btnHistory');
+        const historyDropdown = document.getElementById('historyDropdown');
+        const historyList = document.getElementById('historyList');
+        const btnClearHistory = document.getElementById('btnClearHistory');
+        
+        const floatingSearchContainer = document.getElementById('floatingSearchContainer');
+        const floatingSearchPanel = document.getElementById('floatingSearchPanel');
+        const fabSearchToggle = document.getElementById('fabSearchToggle');
+        const fabSearchIcon = document.getElementById('fabSearchIcon');
+        let isSearchPanelOpen = false;
+
+        // State Riwayat Pencarian (Mengambil dari Local Storage browser)
+        let searchHistory = JSON.parse(localStorage.getItem('excelSearchHistory')) || [];
+        // ----------------------------
+        
+        // Element references for Catalog
+        const createCatalogButton = document.getElementById('createCatalogButton');
+        const catalogSection = document.getElementById('catalogSection');
+        const catalogGrid = document.getElementById('catalogGrid');
+        const backFromCatalogButton = document.getElementById('backFromCatalogButton');
+        const printCatalogButton = document.getElementById('printCatalogButton');
+        const autoFetchAllButton = document.getElementById('autoFetchAllButton');
+        const changeBgButton = document.getElementById('changeBgButton');
+        const bgFileInput = document.getElementById('bgFileInput');
+
+        // State for Catalog Images (Store 20 image slots per item)
+        let catalogImagesState = {};
+        
+        // Load Saved Background Image from Local Storage
+        let catalogBgBase64 = localStorage.getItem('catalogBgImage') || '';
+        
+        const formatCurrency = (value) => new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(value);
+
+        // Debounce function
+        const debounce = (func, delay) => {
+            let timeoutId;
+            return (...args) => {
+                clearTimeout(timeoutId);
+                timeoutId = setTimeout(() => {
+                    func.apply(null, args);
+                }, delay);
+            };
+        };
+        const debouncedTriggerSearchAndDisplay = debounce(triggerSearchAndDisplay, 300);
+
+        // Fungsi Memindahkan Search Component secara Dinamis (Desktop <-> Mobile)
+        function relocateSearchComponent() {
+            const searchComponent = document.getElementById('searchComponent');
+            const desktopContainer = document.getElementById('desktopSearchContainer');
+            const mobileContainer = document.getElementById('mobileSearchContainer');
+            
+            if (!searchComponent || !desktopContainer || !mobileContainer) return;
+            
+            if (window.innerWidth >= 768) {
+                if (searchComponent.parentElement !== desktopContainer) {
+                    desktopContainer.appendChild(searchComponent);
+                    // Jika di desktop dan panel mobile sedang terbuka (karena resize), reset FAB icon-nya
+                    if (typeof isSearchPanelOpen !== 'undefined' && isSearchPanelOpen && fabSearchToggle) {
+                         fabSearchToggle.click();
+                    }
+                }
+            } else {
+                if (searchComponent.parentElement !== mobileContainer) {
+                    mobileContainer.appendChild(searchComponent);
+                }
+            }
+        }
+        
+        window.addEventListener('resize', relocateSearchComponent);
+
+        // Initial setup
+        document.addEventListener('DOMContentLoaded', () => {
+            relocateSearchComponent(); // Pindahkan komponen pencarian ke tempat yang benar
+            
+            fileUploadSection.classList.remove('hidden');
+            searchFilterContainer.classList.add('hidden');
+            resultsSection.classList.add('hidden');
+            shoppingListSection.classList.add('hidden');
+            appTitle.textContent = 'Pencarian Data Excel';
+            renderSearchHistory();
+        });
+
+        // --- FUNGSI RIWAYAT PENCARIAN ---
+        function renderSearchHistory() {
+            historyList.innerHTML = '';
+            if (searchHistory.length === 0) {
+                historyList.innerHTML = '<li class="p-3 text-sm text-gray-500 text-center italic">Belum ada riwayat.</li>';
+                return;
+            }
+            searchHistory.forEach(query => {
+                const li = document.createElement('li');
+                li.className = 'px-4 py-3 md:py-2 text-sm text-gray-700 hover:bg-blue-50 cursor-pointer border-b border-gray-100 last:border-0 flex items-center transition';
+                li.innerHTML = `<i class="fas fa-search text-gray-400 mr-3 md:mr-2 text-xs"></i><span class="font-medium">${query}</span>`;
+                li.onclick = () => {
+                    searchQueryInput.value = query;
+                    historyDropdown.classList.add('hidden');
+                    triggerSearchAndDisplay();
+                    if(window.innerWidth < 768) {
+                         if(isSearchPanelOpen) fabSearchToggle.click();
+                         resultsSection.scrollIntoView({behavior: 'smooth', block: 'start'});
+                    }
+                };
+                historyList.appendChild(li);
+            });
+        }
+
+        function saveToHistory(query) {
+            if (!query || query.length < 2) return;
+            // Hapus duplikat case-insensitive
+            searchHistory = searchHistory.filter(q => q.toLowerCase() !== query.toLowerCase());
+            // Masukkan ke posisi paling atas
+            searchHistory.unshift(query);
+            // Maksimal simpan 10 riwayat
+            if (searchHistory.length > 10) searchHistory.pop();
+            localStorage.setItem('excelSearchHistory', JSON.stringify(searchHistory));
+            renderSearchHistory();
+        }
+        // --------------------------------
+        
+        function removeDialog(dialogId) {
+            const dialog = document.getElementById(dialogId);
+            if (dialog) dialog.remove();
+        }
+
+        // Show custom alert box
+        function showMessageBox(message) {
+            const dialogId = 'messageBox';
+            removeDialog(dialogId);
+
+            const overlay = document.createElement('div');
+            overlay.className = 'dialog-overlay';
+            overlay.id = dialogId;
+            overlay.innerHTML = `
+                <div class="dialog-box">
+                    <div class="p-2">${message}</div>
+                    <div class="dialog-buttons">
+                         <button class="dialog-btn-ok">OK</button>
+                    </div>
+                </div>
+            `;
+            document.body.appendChild(overlay);
+            
+            const okButton = overlay.querySelector('.dialog-btn-ok');
+            okButton.focus();
+            okButton.onclick = () => removeDialog(dialogId);
+        }
+
+        // Show confirmation box
+        function showConfirmationBox(message, onConfirm, confirmText = 'Ya, Hapus') {
+            const dialogId = 'confirmationBox';
+            removeDialog(dialogId);
+
+            const overlay = document.createElement('div');
+            overlay.className = 'dialog-overlay';
+            overlay.id = dialogId;
+            overlay.innerHTML = `
+                <div class="dialog-box">
+                    <div class="p-2">${message}</div>
+                    <div class="dialog-buttons">
+                        <button class="dialog-btn-cancel">Batal</button>
+                        <button class="dialog-btn-confirm">${confirmText}</button>
+                    </div>
+                </div>
+            `;
+            document.body.appendChild(overlay);
+
+            const confirmButton = overlay.querySelector('.dialog-btn-confirm');
+            const cancelButton = overlay.querySelector('.dialog-btn-cancel');
+            
+            confirmButton.onclick = () => {
+                onConfirm();
+                removeDialog(dialogId);
+            };
+            cancelButton.onclick = () => removeDialog(dialogId);
+            cancelButton.focus();
+        }
+        
+        // Show dialog to add a discount
+        function showAddDiscountDialog(onConfirm) {
+            const dialogId = 'addDiscountDialog';
+            removeDialog(dialogId);
+
+            const overlay = document.createElement('div');
+            overlay.className = 'dialog-overlay';
+            overlay.id = dialogId;
+
+            overlay.innerHTML = `
+                <div class="dialog-box">
+                    <h3 class="text-lg font-semibold text-gray-800">Tambah Potongan Penjualan</h3>
+                    <div class="dialog-input-group">
+                        <label for="discountName">Nama Potongan</label>
+                        <input type="text" id="discountName" placeholder="Contoh: Diskon Member" class="w-full p-2 border border-gray-300 rounded-md">
+                    </div>
+                    <div class="dialog-input-group">
+                        <label for="discountValue">Jumlah Potongan (Rp)</label>
+                        <input type="number" id="discountValue" placeholder="Contoh: 5000" class="w-full p-2 border border-gray-300 rounded-md">
+                    </div>
+                    <div class="dialog-buttons">
+                        <button class="dialog-btn-cancel">Batal</button>
+                        <button class="dialog-btn-add">Tambah</button>
+                    </div>
+                </div>
+            `;
+            document.body.appendChild(overlay);
+
+            const addButton = overlay.querySelector('.dialog-btn-add');
+            const cancelButton = overlay.querySelector('.dialog-btn-cancel');
+            const nameInput = overlay.querySelector('#discountName');
+            const valueInput = overlay.querySelector('#discountValue');
+            
+            addButton.onclick = () => {
+                const name = nameInput.value.trim() || 'Potongan';
+                const value = parseFloat(valueInput.value) || 0;
+                if (value > 0) {
+                    onConfirm(name, value);
+                    removeDialog(dialogId);
+                } else {
+                   showMessageBox("Jumlah potongan harus lebih besar dari 0.");
+                }
+            };
+            
+            cancelButton.onclick = () => removeDialog(dialogId);
+            nameInput.focus();
+        }
+
+        // Show dialog to add item with quantity and price
+        function showAddItemDialog(item, onConfirm) {
+            const dialogId = 'addItemDialog';
+            removeDialog(dialogId);
+
+            const overlay = document.createElement('div');
+            overlay.className = 'dialog-overlay';
+            overlay.id = dialogId;
+
+            let cashBackHtml = '';
+            if (item.cashBack > 0) {
+                cashBackHtml = `
+                    <div class="mt-4 p-3 bg-green-100 border border-green-300 rounded-lg">
+                        <div class="flex justify-between items-center text-green-800">
+                            <span class="font-semibold">Cash Back:</span>
+                            <span class="font-bold">+ ${formatCurrency(item.cashBack)}</span>
+                        </div>
+                    </div>
+                `;
+            }
+
+            overlay.innerHTML = `
+                <div class="dialog-box">
+                    <h3 class="text-lg font-semibold text-gray-800">Tambah Barang ke List</h3>
+                    <p class="mt-2 text-gray-600">${item.name}</p>
+                    <div class="dialog-input-group">
+                        <label for="itemQuantity">Kuantitas</label>
+                        <input type="number" id="itemQuantity" value="${item.quantity}" min="1" class="w-full p-2 border border-gray-300 rounded-md">
+                    </div>
+                    <div class="dialog-input-group">
+                        <label for="itemPrice">Harga Input</label>
+                        <input type="number" id="itemPrice" value="${item.price}" class="w-full p-2 border border-gray-300 rounded-md">
+                    </div>
+                    ${cashBackHtml}
+                    <div class="mt-4 p-3 bg-blue-100 border border-blue-300 rounded-lg">
+                        <div class="flex justify-between items-center text-blue-800">
+                            <span class="font-semibold">Harga Final (Barang + CB):</span>
+                            <span id="finalPriceDisplay" class="font-bold"></span>
+                        </div>
+                    </div>
+                    <div class="dialog-buttons">
+                        <button class="dialog-btn-cancel">Batal</button>
+                        <button class="dialog-btn-add">Tambah</button>
+                    </div>
+                </div>
+            `;
+            document.body.appendChild(overlay);
+
+            const addButton = overlay.querySelector('.dialog-btn-add');
+            const cancelButton = overlay.querySelector('.dialog-btn-cancel');
+            const quantityInput = overlay.querySelector('#itemQuantity');
+            const priceInput = overlay.querySelector('#itemPrice');
+            const finalPriceDisplay = overlay.querySelector('#finalPriceDisplay');
+
+            function calculateAndUpdateFinalPrice() {
+                const inputPrice = parseFloat(priceInput.value) || 0;
+                const finalPrice = inputPrice + item.cashBack;
+                finalPriceDisplay.textContent = formatCurrency(finalPrice);
+            }
+
+            calculateAndUpdateFinalPrice();
+            priceInput.addEventListener('input', calculateAndUpdateFinalPrice);
+            
+            addButton.onclick = () => {
+                const quantity = parseInt(quantityInput.value, 10) || 1;
+                const inputPrice = parseFloat(priceInput.value) || 0;
+                onConfirm(quantity, inputPrice);
+                removeDialog(dialogId);
+            };
+
+            cancelButton.onclick = () => removeDialog(dialogId);
+            priceInput.focus();
+            priceInput.select();
+        }
+
+        // Dialog untuk Ekspor / Tambah Massal Hasil Filter
+        function showExportFilteredDialog(onConfirm) {
+            const dialogId = 'exportFilteredDialog';
+            removeDialog(dialogId);
+
+            const overlay = document.createElement('div');
+            overlay.className = 'dialog-overlay';
+            overlay.id = dialogId;
+
+            overlay.innerHTML = `
+                <div class="dialog-box">
+                    <h3 class="text-lg font-semibold text-gray-800 mb-4">Aksi Massal Hasil Pencarian</h3>
+                    <p class="text-sm text-gray-600 mb-4">Pilih aksi untuk <strong class="text-blue-600">${currentResults.length}</strong> barang yang tampil di tabel saat ini.</p>
+                    
+                    <div class="dialog-input-group">
+                        <label for="exportPriceType">Ambil Harga Berdasarkan:</label>
+                        <select id="exportPriceType" class="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 outline-none">
+                            <option value="retail">Harga Retail</option>
+                            <option value="grosir">Harga Grosir</option>
+                            <option value="modal">Harga Modal (+ Profit %)</option>
+                        </select>
+                    </div>
+                    
+                    <div class="dialog-input-group hidden" id="profitPercentageGroup">
+                        <label for="profitPercentage">Persentase Profit dari Modal (%)</label>
+                        <input type="number" id="profitPercentage" value="10" placeholder="Contoh: 10" class="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 outline-none">
+                    </div>
+                    
+                    <div class="dialog-buttons mt-6 flex flex-col sm:flex-row gap-2">
+                        <button class="dialog-btn-cancel w-full sm:w-auto">Batal</button>
+                        <button id="btnExportList" class="dialog-btn-add bg-blue-600 hover:bg-blue-700 text-white border-transparent w-full sm:w-auto"><i class="fas fa-list mr-2"></i>Tambah ke List</button>
+                        <button id="btnExportExcel" class="dialog-btn-add bg-emerald-600 hover:bg-emerald-700 text-white border-transparent w-full sm:w-auto"><i class="fas fa-file-excel mr-2"></i>Ekspor Excel</button>
+                    </div>
+                </div>
+            `;
+            document.body.appendChild(overlay);
+
+            const typeSelect = overlay.querySelector('#exportPriceType');
+            const profitGroup = overlay.querySelector('#profitPercentageGroup');
+            const profitInput = overlay.querySelector('#profitPercentage');
+            
+            typeSelect.addEventListener('change', (e) => {
+                if (e.target.value === 'modal') {
+                    profitGroup.classList.remove('hidden');
+                    profitInput.focus();
+                } else {
+                    profitGroup.classList.add('hidden');
+                }
+            });
+
+            const btnExportList = overlay.querySelector('#btnExportList');
+            const btnExportExcel = overlay.querySelector('#btnExportExcel');
+            const cancelBtn = overlay.querySelector('.dialog-btn-cancel');
+
+            btnExportList.onclick = () => {
+                const type = typeSelect.value;
+                const profit = parseFloat(profitInput.value) || 0;
+                onConfirm('list', type, profit);
+                removeDialog(dialogId);
+            };
+
+            btnExportExcel.onclick = () => {
+                const type = typeSelect.value;
+                const profit = parseFloat(profitInput.value) || 0;
+                onConfirm('excel', type, profit);
+                removeDialog(dialogId);
+            };
+
+            cancelBtn.onclick = () => removeDialog(dialogId);
+        }
+
+        // Dialog untuk Tampil/Sembunyikan Kolom
+        function showToggleColumnsDialog() {
+            const dialogId = 'toggleColumnsDialog';
+            removeDialog(dialogId);
+
+            const overlay = document.createElement('div');
+            overlay.className = 'dialog-overlay';
+            overlay.id = dialogId;
+
+            let checkboxesHtml = fixedHeaders.map((header, index) => {
+                // Jangan izinkan hide 'Aksi' atau 'Nama Barang' untuk menjaga layout dan fungsi dasar
+                if (index === 0 || index === fixedHeaders.indexOf('Nama Barang')) return '';
+                
+                const isChecked = !hiddenColumnIndices.has(index) ? 'checked' : '';
+                return `
+                    <label class="flex items-center space-x-3 mb-2 cursor-pointer p-2 hover:bg-gray-100 rounded transition duration-150 border border-transparent hover:border-gray-200">
+                        <input type="checkbox" class="form-checkbox h-5 w-5 text-blue-600 rounded border-gray-300 focus:ring-blue-500 transition" value="${index}" ${isChecked}>
+                        <span class="text-gray-700 font-medium">${header}</span>
+                    </label>
+                `;
+            }).join('');
+
+            overlay.innerHTML = `
+                <div class="dialog-box">
+                    <h3 class="text-lg font-semibold text-gray-800 mb-4 border-b pb-2"><i class="fas fa-columns mr-2 text-blue-500"></i>Pilih Kolom Ditampilkan</h3>
+                    <div class="text-left max-h-[60vh] overflow-y-auto mb-4 border border-gray-200 rounded p-3 bg-gray-50 shadow-inner">
+                        ${checkboxesHtml}
+                    </div>
+                    <div class="dialog-buttons">
+                        <button class="dialog-btn-cancel">Batal</button>
+                        <button class="dialog-btn-add" id="btnApplyColumns"><i class="fas fa-check mr-2"></i>Terapkan</button>
+                    </div>
+                </div>
+            `;
+            document.body.appendChild(overlay);
+
+            const btnApply = overlay.querySelector('#btnApplyColumns');
+            const cancelBtn = overlay.querySelector('.dialog-btn-cancel');
+
+            btnApply.onclick = () => {
+                const checkboxes = overlay.querySelectorAll('input[type="checkbox"]');
+                hiddenColumnIndices.clear();
+                checkboxes.forEach(cb => {
+                    if (!cb.checked) {
+                        hiddenColumnIndices.add(parseInt(cb.value));
+                    }
+                });
+                updateTableHeaderVisibility();
+                displayResults(); // Re-render table untuk menyembunyikan sel-sel data
+                removeDialog(dialogId);
+                showToast('Tampilan kolom diperbarui');
+            };
+
+            cancelBtn.onclick = () => removeDialog(dialogId);
+        }
+
+        // Update visibilitas judul kolom
+        function updateTableHeaderVisibility() {
+            const ths = tableHeader.querySelectorAll('th');
+            ths.forEach((th, index) => {
+                if (hiddenColumnIndices.has(index)) {
+                    th.style.setProperty('display', 'none', 'important');
+                } else {
+                    th.style.display = '';
+                }
+            });
+        }
+
+        // Show temporary toast notification
+        function showToast(message, duration = 2500) {
+            const existingToast = document.querySelector('.toast-notification');
+            if (existingToast) {
+                existingToast.remove();
+            }
+
+            const toast = document.createElement('div');
+            toast.className = 'toast-notification';
+            toast.textContent = message;
+            document.body.appendChild(toast);
+
+            setTimeout(() => {
+                toast.classList.add('fade-out');
+                setTimeout(() => {
+                    toast.remove();
+                }, 500);
+            }, duration);
+        }
+
+        // Handle file input
+        excelFileInput.addEventListener('change', (event) => {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            appTitle.textContent = `Pencarian Data: ${file.name}`;
+            loadingIndicator.classList.remove('hidden');
+            fileUploadSection.classList.add('hidden');
+            resultsSection.classList.add('hidden');
+            tableBody.innerHTML = '';
+
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                try {
+                    const data = new Uint8Array(e.target.result);
+                    const workbook = XLSX.read(data, { type: 'array' });
+                    const sheetName = workbook.SheetNames[0];
+                    const worksheet = workbook.Sheets[sheetName];
+                    const jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
+
+                    if (jsonData.length < 2) {
+                        showMessageBox('File Excel kosong atau tidak memiliki data.');
+                        resetUI();
+                        return;
+                    }
+
+                    // PENTING: Karena 'Cash Back Grosir' dihapus (indeks ke-5 dari data asli, karena aslinya: Nama Barang, Modal, Retail, CB, Grosir, CB Grosir...),
+                    // kita perlu memfilter kolom tersebut saat menyimpan ke excelData.
+                    
+                    // Asumsi struktur kolom asli di Excel: 
+                    // [0]: ... (dibuang di slice awal)
+                    // [1]: ... (dibuang di slice awal)
+                    // [2]: Nama Barang
+                    // [3]: Modal
+                    // [4]: Retail
+                    // [5]: Cash Back
+                    // [6]: Grosir
+                    // [7]: Cash Back Grosir -> INI YANG AKAN DIHAPUS
+                    // [8]: Stok Solo
+                    // dst...
+
+                    // Karena slice(2) mengambil dari Nama Barang dst, maka 'Cash Back Grosir' ada di indeks ke-5 (dihitung dari 0 setelah slice).
+                    excelData = jsonData.slice(1).map(row => {
+                        const slicedRow = row.slice(2);
+                        // Hapus elemen ke-5 ('Cash Back Grosir')
+                        slicedRow.splice(5, 1);
+                        return [null, ...slicedRow]; // Add placeholder for 'Aksi'
+                    });
+
+                    tableHeader.innerHTML = '';
+                    fixedHeaders.forEach((headerText, index) => {
+                        const th = document.createElement('th');
+                        // Biarkan kolom Nama Barang wrap teksnya, kolom lain tetap satu baris
+                        let thClass = 'py-3 px-2 sm:px-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider';
+                        if (headerText !== 'Nama Barang') thClass += ' whitespace-nowrap';
+                        th.className = thClass;
+                        th.textContent = headerText;
+                        if (hiddenColumnIndices.has(index)) {
+                            th.style.setProperty('display', 'none', 'important');
+                        }
+                        tableHeader.appendChild(th);
+                    });
+
+                    loadingIndicator.classList.add('hidden');
+                    searchFilterContainer.classList.remove('hidden');
+                    resultsSection.classList.remove('hidden');
+                    gantiDataBtn.classList.remove('hidden');
+                    floatingSearchContainer.classList.remove('hidden');
+                    
+                    resetInputs();
+                    triggerSearchAndDisplay();
+                } catch (error) {
+                    console.error('Error reading Excel file:', error);
+                    showMessageBox('Gagal membaca file. Pastikan format file Excel benar.');
+                    resetUI();
+                }
+            };
+            reader.readAsArrayBuffer(file);
+        });
+
+        // Reset UI to initial state
+        function resetUI() {
+            loadingIndicator.classList.add('hidden');
+            fileUploadSection.classList.remove('hidden');
+            searchFilterContainer.classList.add('hidden');
+            resultsSection.classList.add('hidden');
+            catalogSection.classList.add('hidden');
+            gantiDataBtn.classList.add('hidden');
+            floatingSearchContainer.classList.add('hidden');
+            if (isSearchPanelOpen) fabSearchToggle.click(); // Close panel if open
+            appTitle.textContent = 'Pencarian Data Excel';
+            excelFileInput.value = '';
+            shoppingList = [];
+            catalogImagesState = {};
+            renderShoppingList();
+        }
+
+        // Reset search/filter inputs
+        function resetInputs() {
+            searchQueryInput.value = '';
+            stokTotalMinInput.value = '1'; // Default: Stok minimal 1
+            stokLocationSelect.value = 'Stok Sragen'; // Default: Stok Sragen
+            sortColumnSelect.value = 'Modal'; // Default: Urutkan berdasarkan Modal
+            sortOrderSelect.value = 'asc'; // Default: Termurah (Ascending)
+            
+            // Reset Profit Filter
+            isLowProfitFilterActive = false;
+            checkProfitButton.classList.add('bg-yellow-500', 'hover:bg-yellow-600');
+            checkProfitButton.classList.remove('bg-yellow-700', 'hover:bg-yellow-800');
+            checkProfitButton.innerHTML = '<i class="fas fa-exclamation-triangle mr-2"></i>Cek Profit < 5%';
+        }
+
+        // Core search/filter/sort function
+        function performSearch(query, minStock, stockLocation, sortColumn, sortOrder) {
+            let filteredData = excelData;
+
+            // 1. Text search
+            if (query) {
+                const lowerCaseQuery = query.toLowerCase();
+                filteredData = filteredData.filter(row => row.slice(1).some(cell => String(cell).toLowerCase().includes(lowerCaseQuery)));
+            }
+            
+            // 2. Stock filter based on selected location
+            const stockColumnIndex = stokColumnIndices[stockLocation];
+            if (minStock !== null && stockColumnIndex !== -1) {
+                filteredData = filteredData.filter(row => {
+                    const stockValue = parseFloat(row[stockColumnIndex]) || 0;
+                    return stockValue >= minStock;
+                });
+            }
+
+            // 3. Profit Filter (< 5%)
+            if (isLowProfitFilterActive) {
+                filteredData = filteredData.filter(row => {
+                    const modal = parseFloat(row[modalColumnIndex]) || 0;
+                    const retail = parseFloat(row[retailColumnIndex]) || 0;
+                    
+                    if (modal > 0) {
+                        const profitMargin = ((retail - modal) / modal) * 100;
+                        return profitMargin < 5;
+                    }
+                    return false; // Skip if modal is 0 to avoid Infinity
+                });
+            }
+
+            // 4. Sorting
+            if (sortColumn) {
+                const columnIndex = fixedHeaders.indexOf(sortColumn);
+                if (columnIndex !== -1) {
+                    filteredData.sort((a, b) => {
+                        const valA = parseFloat(a[columnIndex]) || 0;
+                        const valB = parseFloat(b[columnIndex]) || 0;
+                        return sortOrder === 'asc' ? valA - valB : valB - valA;
+                    });
+                }
+            }
+
+            return filteredData;
+        }
+
+        function triggerSearchAndDisplay() {
+            const query = searchQueryInput.value.trim();
+            const minStock = stokTotalMinInput.value === '' ? null : parseFloat(stokTotalMinInput.value);
+            const stockLocation = stokLocationSelect.value;
+            const sortColumn = sortColumnSelect.value;
+            const sortOrder = sortOrderSelect.value;
+            
+            currentPage = 1; // Reset to first page on new search
+            currentResults = performSearch(query, minStock, stockLocation, sortColumn, sortOrder);
+            displayResults();
+        }
+
+        // Function to update the total in the shopping list footer
+        function updateShoppingListTotal() {
+            const totals = shoppingList.reduce((acc, item) => {
+                const price = parseFloat(item.price) || 0;
+                const quantity = parseInt(item.quantity) || 0;
+                acc.totalValue += price * quantity;
+
+                // Only count quantity of main items, not discounts or cashback
+                if (item.type === 'item') {
+                    acc.totalQty += quantity;
+                }
+                return acc;
+            }, { totalValue: 0, totalQty: 0 });
+            
+            shoppingListFooter.innerHTML = `
+                <tr>
+                    <td class="py-3 px-4 text-right font-bold text-gray-700 uppercase">Total</td>
+                    <td class="py-3 px-4 font-bold text-gray-800 text-center">${totals.totalQty}</td>
+                    <td class="py-3 px-4 font-bold text-gray-800">${formatCurrency(totals.totalValue)}</td>
+                    <td></td>
+                </tr>
+            `;
+        }
+
+        // Render the shopping list table
+        function renderShoppingList() {
+            shoppingListBody.innerHTML = '';
+            // Count only main items for the list header, not discounts or cashback
+            const mainItemCount = shoppingList.filter(item => item.type === 'item').length;
+            shoppingListCount.textContent = mainItemCount;
+
+            if (shoppingList.length > 0) {
+                shoppingListSection.classList.remove('hidden');
+            } else {
+                shoppingListSection.classList.add('hidden');
+            }
+            
+            shoppingList.forEach((item) => {
+                const tr = document.createElement('tr');
+                const isCashback = item.type === 'cashback';
+                const isDiscount = item.type === 'discount';
+                
+                tr.className = isCashback ? 'bg-green-50' : isDiscount ? 'bg-yellow-50' : 'hover:bg-gray-50';
+
+                const tdName = document.createElement('td');
+                tdName.textContent = item.displayName;
+                // Izinkan nama barang turun baris dengan break-words
+                let nameClasses = 'py-2 px-2 sm:px-4 text-sm break-words';
+                
+                if (isCashback) {
+                    nameClasses += ' text-green-700 italic';
+                    tdName.style.paddingLeft = '2rem';
+                } else if (isDiscount) {
+                    nameClasses += ' text-yellow-800 font-semibold';
+                } else { // This is a main item (type: 'item')
+                    nameClasses += ' text-blue-700 font-semibold cursor-pointer hover:underline';
+                    tdName.title = `Klik untuk mencari "${item.displayName}"`;
+                    tdName.onclick = () => {
+                        searchQueryInput.value = item.displayName;
+                        triggerSearchAndDisplay();
+                        // Scroll to the search input for better user experience
+                        searchQueryInput.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                        showToast(`Mencari untuk: ${item.displayName}`);
+                    };
+                }
+                tdName.className = nameClasses;
+
+
+                const tdQty = document.createElement('td');
+                // Sesuaikan padding
+                tdQty.className = 'py-2 px-2 sm:px-4 text-sm text-gray-700 whitespace-nowrap align-middle';
+                const qtyInput = document.createElement('input');
+                qtyInput.type = 'number';
+                qtyInput.min = '1';
+                qtyInput.className = 'w-full text-center text-gray-700 bg-white border border-gray-300 rounded-lg py-1 px-2 focus:outline-none focus:ring-2 focus:ring-blue-500 transition';
+                qtyInput.value = item.quantity;
+                qtyInput.disabled = isCashback || isDiscount; 
+                
+                qtyInput.oninput = (e) => {
+                    const newQuantity = parseInt(e.target.value, 10) || 1;
+                    shoppingList.forEach(relatedItem => {
+                        if (relatedItem.id === item.id) {
+                            relatedItem.quantity = newQuantity;
+                        }
+                    });
+                    renderShoppingList();
+                };
+                tdQty.appendChild(qtyInput);
+                
+                const tdRetail = document.createElement('td');
+                // Sesuaikan padding
+                tdRetail.className = 'py-2 px-2 sm:px-4 text-sm text-gray-700 whitespace-nowrap align-middle';
+                const retailInput = document.createElement('input');
+                retailInput.type = 'number';
+                const priceColor = isCashback || isDiscount ? 'text-red-600' : '';
+                retailInput.className = `w-full text-gray-700 bg-white border border-gray-300 rounded-lg py-1 px-2 focus:outline-none focus:ring-2 focus:ring-blue-500 transition ${priceColor}`;
+                retailInput.value = item.price;
+                retailInput.disabled = isCashback; // Only cashback is non-editable
+
+                retailInput.oninput = (e) => {
+                    let newPrice = parseFloat(e.target.value) || 0;
+                    if(isDiscount) {
+                        item.price = -Math.abs(newPrice); // ensure it stays negative
+                        retailInput.value = item.price;
+                    } else {
+                        item.price = newPrice;
+                    }
+                    updateShoppingListTotal();
+                };
+                tdRetail.appendChild(retailInput);
+
+                const tdAction = document.createElement('td');
+                // Sesuaikan padding
+                tdAction.className = 'py-2 px-2 sm:px-4 text-sm text-gray-700 whitespace-nowrap align-middle';
+                if (!isCashback) {
+                    const removeButton = document.createElement('button');
+                    removeButton.innerHTML = '<i class="fas fa-trash-alt mr-1"></i> Hapus';
+                    removeButton.className = 'bg-red-500 hover:bg-red-600 text-white text-xs font-bold py-1 px-2 rounded transition duration-200';
+                    removeButton.onclick = () => {
+                        showConfirmationBox(`Anda yakin ingin menghapus <strong>"${item.displayName}"</strong> dari list?`, () => {
+                            shoppingList = shoppingList.filter(i => i.id !== item.id);
+                            renderShoppingList();
+                        });
+                    };
+                    tdAction.appendChild(removeButton);
+                }
+
+                tr.appendChild(tdName);
+                tr.appendChild(tdQty);
+                tr.appendChild(tdRetail);
+                tr.appendChild(tdAction);
+                shoppingListBody.appendChild(tr);
+            });
+
+            updateShoppingListTotal();
+        }
+
+        // Function to format the calculator display string with Indonesian thousands separators.
+        function formatDisplayExpression(expression) {
+            if (expression === null || typeof expression === 'undefined') return '';
+            expression = String(expression);
+            
+            const parts = expression.split(/([+\-*/%])/);
+            
+            const formattedParts = parts.map(part => {
+                if (part && !isNaN(part)) { // Is a number
+                    let [integer, decimal] = part.split('.');
+                    integer = integer.replace(/\B(?=(\d{3})+(?!\d))/g, ".");
+                    return decimal !== undefined ? `${integer},${decimal}` : integer;
+                }
+                return part; // Is an operator or empty string
+            });
+            
+            return formattedParts.join('');
+        }
+
+        // Display search results with pagination
+        function displayResults() {
+            tableBody.innerHTML = '';
+            const totalResults = currentResults.length;
+            resultCountSpan.textContent = totalResults;
+
+            const totalPages = Math.ceil(totalResults / rowsPerPage);
+            
+            if (totalResults === 0) {
+                 paginationControls.classList.add('hidden');
+                 return;
+            }
+
+            paginationControls.classList.remove('hidden');
+
+            const startIndex = (currentPage - 1) * rowsPerPage;
+            const endIndex = startIndex + rowsPerPage;
+            const paginatedResults = currentResults.slice(startIndex, endIndex);
+
+            paginatedResults.forEach(rowData => {
+                const tr = document.createElement('tr');
+                tr.className = 'hover:bg-gray-50 transition duration-150 ease-in-out mobile-collapsed'; // Tambahkan class mobile-collapsed default
+                
+                // Tambahkan event click untuk toggle detail di mobile
+                tr.addEventListener('click', (e) => {
+                    // Jangan toggle jika yang diklik adalah tombol Tambah, tombol AI, input, atau link gambar
+                    if (e.target.closest('button') || e.target.closest('a') || e.target.tagName.toLowerCase() === 'input') return;
+                    
+                    if (window.innerWidth <= 768) {
+                        tr.classList.toggle('mobile-collapsed');
+                    }
+                });
+                
+                // PERBAIKAN: Ganti forEach dengan for loop agar tabel HANYA membuat 
+                // kolom sejumlah yang ada di daftar fixedHeaders, membuang kolom sisa dari Excel.
+                for (let index = 0; index < fixedHeaders.length; index++) {
+                    const cellData = rowData[index] !== undefined ? rowData[index] : '';
+                    const td = document.createElement('td');
+                    
+                    // Izinkan teks Nama Barang untuk turun baris (wrap), sementara kolom harga dan stok tetap satu baris
+                    let tdClass = 'py-2 px-2 sm:px-3 text-sm text-gray-700 border-b border-gray-200 align-middle';
+                    if (index === namaBarangColumnIndex) {
+                        tdClass += ' min-w-[200px] break-words';
+                    } else {
+                        tdClass += ' whitespace-nowrap';
+                    }
+                    td.className = tdClass;
+
+                    if (hiddenColumnIndices.has(index)) {
+                        td.style.setProperty('display', 'none', 'important');
+                    }
+                    
+                    // PERBAIKAN: Pastikan nama kolom tidak undefined. 
+                    // Jika index 0 (kolom Aksi yang ditambahkan secara dinamis), berikan label 'Aksi'
+                    const label = index === 0 ? 'Aksi' : (fixedHeaders[index] || '');
+                    td.setAttribute('data-label', label);
+
+                    if (index === 0) { // 'Aksi' column
+                        const addButton = document.createElement('button');
+                        addButton.innerHTML = '<i class="fas fa-plus text-[10px] sm:text-xs mr-1"></i> Tambah';
+                        addButton.className = 'bg-blue-500 hover:bg-blue-600 text-white text-[11px] sm:text-xs font-bold py-1 px-2 sm:py-1 sm:px-2.5 rounded transition duration-200 whitespace-nowrap shadow-sm';
+                        addButton.onclick = () => {
+                            const itemName = rowData[namaBarangColumnIndex];
+                            const isAlreadyInList = shoppingList.some(item => item.type === 'item' && item.originalRow[namaBarangColumnIndex] === itemName);
+                            
+                            if (isAlreadyInList) {
+                                showMessageBox(`'${itemName}' sudah ada di dalam list.`);
+                            } else {
+                                const retailPrice = parseFloat(rowData[retailColumnIndex]) || 0;
+                                const cashBackValue = parseFloat(rowData[cashBackColumnIndex]) || 0;
+                                
+                                showAddItemDialog({ name: itemName, quantity: 1, price: retailPrice, cashBack: cashBackValue }, (quantity, inputPrice) => {
+                                    const finalPrice = inputPrice + cashBackValue;
+                                    const uniqueId = crypto.randomUUID();
+
+                                    shoppingList.push({
+                                        id: uniqueId,
+                                        type: 'item',
+                                        originalRow: rowData,
+                                        displayName: itemName,
+                                        quantity: quantity,
+                                        price: finalPrice
+                                    });
+
+                                    if (cashBackValue > 0) {
+                                        shoppingList.push({
+                                            id: uniqueId,
+                                            type: 'cashback',
+                                            originalRow: rowData,
+                                            displayName: `Cash Back - ${itemName}`,
+                                            quantity: quantity,
+                                            price: -cashBackValue
+                                        });
+                                    }
+
+                                    renderShoppingList();
+                                    showToast(`'${itemName}' berhasil ditambahkan.`);
+                                });
+                            }
+                        };
+                        td.appendChild(addButton);
+                    } else if (currencyColumnIndices.includes(index)) {
+                        const numericValue = parseFloat(cellData);
+                        td.textContent = !isNaN(numericValue) ? formatCurrency(numericValue) : '';
+                        
+                        // Highlight low profit dynamically in the Retail column if filter is active
+                        if (index === retailColumnIndex) {
+                            const modalVal = parseFloat(rowData[modalColumnIndex]) || 0;
+                            const retailVal = parseFloat(rowData[retailColumnIndex]) || 0;
+                            if (modalVal > 0) {
+                                const margin = ((retailVal - modalVal) / modalVal) * 100;
+                                if (margin < 5) {
+                                    td.classList.add('text-red-600', 'font-semibold');
+                                    td.title = `Profit margin: ${margin.toFixed(2)}%`;
+                                }
+                            }
+                        }
+
+                    } else if (index === namaBarangColumnIndex) {
+                        // Membuat kontainer flex untuk menyusun nama barang dan tombol AI
+                        const container = document.createElement('div');
+                        container.className = 'flex items-start justify-start gap-1.5 w-full flex-wrap'; // Ubah items-center jadi items-start
+
+                        // Link teks utama (Gambar)
+                        const link = document.createElement('a');
+                        link.href = `https://www.google.com/search?q=${encodeURIComponent(cellData)}&tbm=isch`;
+                        link.target = '_blank';
+                        link.textContent = cellData;
+                        link.className = 'text-blue-600 hover:underline break-words';
+                        link.title = 'Klik untuk melihat gambar';
+                        
+                        // Tombol Pencarian AI (Spesifikasi Lengkap)
+                        const aiSearchBtn = document.createElement('a');
+                        // Mengarahkan ke mesin pencari AI (Perplexity) untuk spesifikasi detail
+                        aiSearchBtn.href = `https://www.perplexity.ai/search?q=${encodeURIComponent('Berikan spesifikasi lengkap untuk: ' + cellData)}`;
+                        aiSearchBtn.target = '_blank';
+                        aiSearchBtn.className = 'inline-flex items-center justify-center bg-purple-100 text-purple-700 hover:bg-purple-200 hover:text-purple-900 rounded px-1.5 py-0.5 flex-shrink-0 transition duration-200 shadow-sm border border-purple-200';
+                        aiSearchBtn.title = 'Cari Spesifikasi Lengkap (Mode AI)';
+                        aiSearchBtn.innerHTML = '<i class="fas fa-search text-[9px]"></i><span class="text-[10px] font-bold ml-1 uppercase">AI</span>';
+
+                        container.appendChild(link);
+                        container.appendChild(aiSearchBtn);
+                        td.appendChild(container);
+                    } else {
+                        td.textContent = cellData;
+                    }
+
+                    if (index === modalColumnIndex) {
+                        td.classList.add('cursor-pointer', 'font-semibold', 'text-indigo-600', 'hover:text-indigo-800');
+                        td.title = 'Klik untuk menghitung harga jual';
+                        td.onclick = () => {
+                            const modalValue = parseFloat(rowData[modalColumnIndex]) || 0;
+                            const retailValue = parseFloat(rowData[retailColumnIndex]) || 0;
+                            const cashBackValue = parseFloat(rowData[cashBackColumnIndex]) || 0;
+                            const modalAfterCashback = modalValue - cashBackValue;
+                            const retailAfterCashback = retailValue - cashBackValue;
+                            
+                            const grosirValue = parseFloat(rowData[grosirColumnIndex]) || 0;
+                            const grosirAfterCashback = grosirValue - cashBackValue;
+
+                            const message = `<h3 class='text-lg font-bold mb-4 text-gray-800'>Kalkulasi Harga Jual</h3>
+                                <div class='flex flex-col md:flex-row gap-6 w-full'>
+                                    <!-- Left Side: Calculation Details -->
+                                    <div class='flex-1 text-left'>
+                                        <div class='space-y-2 text-gray-700'>
+                                            <p><strong>Modal:</strong> <span class="float-right">${formatCurrency(modalValue)}</span></p>
+                                            <p><strong>Cash Back:</strong> <span class="float-right">- ${formatCurrency(cashBackValue)}</span></p>
+                                            <hr class='my-1 border-t border-gray-300'>
+                                            <p class='font-semibold'><strong>Modal - CB:</strong> <span id="modalAfterCashbackValue" class="float-right font-bold text-teal-600 cursor-pointer hover:text-teal-500" title="Klik untuk memasukkan ke kalkulator">${formatCurrency(modalAfterCashback)}</span></p>
+                                        </div>
+                                        <div class='space-y-2 text-gray-700 mt-4'>
+                                            <p><strong>Retail:</strong> <span class="float-right">${formatCurrency(retailValue)}</span></p>
+                                            <p><strong>Cash Back:</strong> <span class="float-right">- ${formatCurrency(cashBackValue)}</span></p>
+                                            <hr class='my-1 border-t border-gray-300'>
+                                            <p class='font-semibold'><strong>Retail - CB:</strong> <span id="retailAfterCashbackValue" class="float-right font-bold text-orange-600 cursor-pointer hover:text-orange-500" title="Klik untuk memasukkan ke kalkulator">${formatCurrency(retailAfterCashback)}</span></p>
+                                        </div>
+                                        <div class='space-y-2 text-gray-700 mt-4'>
+                                            <p><strong>Grosir:</strong> <span class="float-right">${formatCurrency(grosirValue)}</span></p>
+                                            <p><strong>Cash Back:</strong> <span class="float-right">- ${formatCurrency(cashBackValue)}</span></p>
+                                            <hr class='my-1 border-t border-gray-300'>
+                                            <p class='font-semibold'><strong>Grosir - CB:</strong> <span id="grosirAfterCashbackValue" class="float-right font-bold text-sky-600 cursor-pointer hover:text-sky-500" title="Klik untuk memasukkan ke kalkulator">${formatCurrency(grosirAfterCashback)}</span></p>
+                                        </div>
+                                        <hr class='my-3 border-t-2 border-dashed border-gray-300'>
+                                        <div class='space-y-2 text-gray-700'>
+                                            <h4 class='text-md font-bold mb-2 text-gray-800'>Kalkulasi Kustom</h4>
+                                            <div class="flex items-center space-x-2"><label for="customPercentage" class="text-sm flex-shrink-0">Markup (%):</label><input type="number" id="customPercentage" class="w-full border border-gray-300 rounded-md p-1 text-center focus:ring-2 focus:ring-purple-500 focus:outline-none" placeholder="cth: 10"></div><div id="customResult" class="text-center font-bold text-xl text-purple-600 mt-2 h-8"></div>
+                                        </div>
+                                    </div>
+                                    
+                                    <!-- Tombol Buka/Tutup Kalkulator (Khusus Mobile) -->
+                                    <button id="toggleCalcBtn" class="md:hidden w-full bg-blue-50 border border-blue-200 text-blue-700 font-bold py-2.5 px-4 rounded-lg flex items-center justify-center transition shadow-sm mt-2">
+                                        <i class="fas fa-calculator mr-2"></i>Buka Kalkulator
+                                    </button>
+
+                                    <!-- Right Side: Calculator -->
+                                    <div id="calculatorWrapper" class='hidden md:block md:w-2/5'>
+                                        <div class="calculator mt-0">
+                                            <h4 class='text-md font-bold mb-2 text-gray-800 text-left'>Kalkulator</h4>
+                                            <input type="text" id="calculatorDisplay" class="calculator-display" readonly>
+                                            <div id="calculatorButtons" class="calculator-buttons">
+                                                <!-- Calculator buttons are now rearranged and include DEL, %, and . -->
+                                                <button class="calc-btn-c" data-value="C">C</button>
+                                                <button class="calc-btn-del" data-value="DEL"><i class="fas fa-backspace pointer-events-none"></i></button>
+                                                <button class="calc-btn-op" data-value="%">%</button>
+                                                <button class="calc-btn-op" data-value="/">&divide;</button>
+                                                
+                                                <button class="calc-btn-num" data-value="7">7</button>
+                                                <button class="calc-btn-num" data-value="8">8</button>
+                                                <button class="calc-btn-num" data-value="9">9</button>
+                                                <button class="calc-btn-op" data-value="*">&times;</button>
+                                                
+                                                <button class="calc-btn-num" data-value="4">4</button>
+                                                <button class="calc-btn-num" data-value="5">5</button>
+                                                <button class="calc-btn-num" data-value="6">6</button>
+                                                <button class="calc-btn-op" data-value="-">-</button>
+                                                
+                                                <button class="calc-btn-num" data-value="1">1</button>
+                                                <button class="calc-btn-num" data-value="2">2</button>
+                                                <button class="calc-btn-num" data-value="3">3</button>
+                                                <button class="calc-btn-op" data-value="+">+</button>
+                                                
+                                                <button class="calc-btn-num col-span-2" data-value="0">0</button>
+                                                <button class="calc-btn-num" data-value=".">.</button>
+                                                <button class="calc-btn-eq" data-value="=">=</button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="mt-6 text-center">
+                                    <button id="calcDialogCloseButton" class="dialog-btn-ok py-2 px-8 rounded-lg">OK</button>
+                                </div>`;
+                            showMessageBox(message);
+                            
+                            // Resize the dialog for the new layout and manage interaction
+                            const dialogContainer = document.querySelector('#messageBox');
+                            if(dialogContainer) {
+                                const dialogBox = dialogContainer.querySelector('.dialog-box');
+                                const dialogButtons = dialogContainer.querySelector('.dialog-buttons');
+                                if (dialogBox) {
+                                    // FIX Lebar dialog agar responsif (100% pada HP, max 768px pada desktop)
+                                    dialogBox.style.width = '100%';
+                                    dialogBox.style.maxWidth = '768px';
+                                    dialogBox.style.textAlign = 'left';
+                                }
+                                if (dialogButtons) {
+                                    dialogButtons.style.display = 'none'; // Hide the default OK button
+                                }
+                                // Add event listener to close dialog when clicking overlay
+                                dialogContainer.addEventListener('click', (e) => {
+                                   if (e.target === dialogContainer) {
+                                      removeDialog('messageBox');
+                                   }
+                                });
+                            }
+
+                            // Logika Toggle Kalkulator Mobile
+                            const toggleCalcBtn = document.getElementById('toggleCalcBtn');
+                            const calculatorWrapper = document.getElementById('calculatorWrapper');
+                            if (toggleCalcBtn && calculatorWrapper) {
+                                toggleCalcBtn.onclick = () => {
+                                    if (calculatorWrapper.classList.contains('hidden')) {
+                                        calculatorWrapper.classList.remove('hidden');
+                                        toggleCalcBtn.innerHTML = '<i class="fas fa-times mr-2"></i>Tutup Kalkulator';
+                                        toggleCalcBtn.classList.replace('bg-blue-50', 'bg-red-50');
+                                        toggleCalcBtn.classList.replace('text-blue-700', 'text-red-600');
+                                        toggleCalcBtn.classList.replace('border-blue-200', 'border-red-200');
+                                        
+                                        // Scroll ke bawah agar kalkulator terlihat di HP
+                                        setTimeout(() => {
+                                            calculatorWrapper.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+                                        }, 100);
+                                    } else {
+                                        calculatorWrapper.classList.add('hidden');
+                                        toggleCalcBtn.innerHTML = '<i class="fas fa-calculator mr-2"></i>Buka Kalkulator';
+                                        toggleCalcBtn.classList.replace('bg-red-50', 'bg-blue-50');
+                                        toggleCalcBtn.classList.replace('text-red-600', 'text-blue-700');
+                                        toggleCalcBtn.classList.replace('border-red-200', 'border-blue-200');
+                                    }
+                                };
+                            }
+
+                            const calculatorDisplay = document.getElementById('calculatorDisplay');
+                            let currentExpression = '';
+                            
+                            // Add click-to-copy functionality for calculated values
+                            document.getElementById('modalAfterCashbackValue').onclick = () => {
+                                currentExpression = String(modalAfterCashback);
+                                calculatorDisplay.value = formatDisplayExpression(currentExpression);
+                            };
+                            document.getElementById('retailAfterCashbackValue').onclick = () => {
+                                currentExpression = String(retailAfterCashback);
+                                calculatorDisplay.value = formatDisplayExpression(currentExpression);
+                            };
+                            document.getElementById('grosirAfterCashbackValue').onclick = () => {
+                                currentExpression = String(grosirAfterCashback);
+                                calculatorDisplay.value = formatDisplayExpression(currentExpression);
+                            };
+                            
+                            // Add functionality to custom OK button in calculator dialog
+                            const calcCloseButton = document.getElementById('calcDialogCloseButton');
+                            if (calcCloseButton) {
+                                calcCloseButton.onclick = () => removeDialog('messageBox');
+                            }
+
+                            // Custom markup calculation logic
+                            const customPercentageInput = document.getElementById('customPercentage');
+                            const customResultDiv = document.getElementById('customResult');
+                            if (customPercentageInput && customResultDiv) {
+                                customPercentageInput.addEventListener('input', () => {
+                                    const percentage = parseFloat(customPercentageInput.value);
+                                    if (!isNaN(percentage) && customPercentageInput.value.trim() !== '') {
+                                        const markup = modalValue * (percentage / 100);
+                                        const finalPrice = modalAfterCashback + markup;
+                                        customResultDiv.textContent = formatCurrency(finalPrice);
+                                    } else {
+                                        customResultDiv.textContent = '';
+                                    }
+                                });
+                                customPercentageInput.focus();
+                            }
+
+                            // Calculator logic
+                            const calculatorButtons = document.getElementById('calculatorButtons');
+                            
+                            calculatorButtons.addEventListener('click', (event) => {
+                                // Gunakan closest('button') agar tidak error jika yang diklik adalah icon
+                                const targetBtn = event.target.closest('button');
+                                if (!targetBtn) return;
+                                
+                                const value = targetBtn.dataset.value;
+
+                                if (value === 'C') {
+                                    currentExpression = '';
+                                } else if (value === 'DEL') {
+                                    // Hapus satu karakter terakhir
+                                    currentExpression = currentExpression.slice(0, -1);
+                                } else if (value === '=') {
+                                    try {
+                                        // A simple, unsafe eval. For a real app, a proper parser is better.
+                                        currentExpression = String(eval(currentExpression.replace(/--/g, '+')));
+                                    } catch (e) {
+                                        currentExpression = '';
+                                        calculatorDisplay.value = 'Error';
+                                        return;
+                                    }
+                                } else if (value === '%') {
+                                    try {
+                                        const match = currentExpression.match(/^(.*)([+\-*/])(\d+\.?\d*)$/);
+                                        if (match) {
+                                            const leftPart = match[1];
+                                            const operator = match[2];
+                                            const rightNumStr = match[3];
+                                            
+                                            const leftValue = eval(leftPart);
+                                            const rightValue = parseFloat(rightNumStr);
+                                            
+                                            let percentageOf = (operator === '+' || operator === '-') ? leftValue : 1;
+                                            const percentageAmount = percentageOf * (rightValue / 100);
+                                            
+                                            currentExpression = leftPart + operator + percentageAmount;
+                                        } else {
+                                           currentExpression = String(eval(currentExpression) / 100);
+                                        }
+                                    } catch(e) { /* ignore */ }
+                                } else {
+                                    if (value === '.') {
+                                        const parts = currentExpression.split(/[+\-*/%]/);
+                                        if (parts[parts.length - 1].includes('.')) return;
+                                    }
+                                    currentExpression += value;
+                                }
+                                calculatorDisplay.value = formatDisplayExpression(currentExpression);
+                            });
+                        };
+                    }
+
+                    tr.appendChild(td);
+                } // Tutup dari for loop
+                tableBody.appendChild(tr);
+            });
+            
+            // Update pagination info and button states
+            pageInfo.textContent = `Halaman ${currentPage} dari ${totalPages}`;
+            prevPageButton.disabled = currentPage === 1;
+            nextPageButton.disabled = currentPage === totalPages;
+        }
+        
+        // Export shopping list to Excel
+        function exportShoppingListToExcel() {
+            if (shoppingList.length === 0) {
+                showMessageBox('List barang masih kosong. Tambahkan barang terlebih dahulu.');
+                return;
+            }
+
+            let subTotal = 0;
+            const itemRows = [];
+            const discountRows = [];
+
+            shoppingList.forEach(item => {
+                const quantity = parseInt(item.quantity) || 0;
+                const price = parseFloat(item.price) || 0;
+                const total = quantity * price;
+
+                if (item.type === 'item') {
+                    const cashBackValue = parseFloat(item.originalRow[cashBackColumnIndex]) || 0;
+                    itemRows.push({
+                        'Deskripsi': item.displayName,
+                        'Kuantitas': quantity,
+                        'Harga Satuan': price,
+                        'Cash Back': cashBackValue > 0 ? -cashBackValue * quantity : 0, // Show total cashback for the line
+                        'Total': total
+                    });
+                    subTotal += total;
+                } else if (item.type === 'cashback') {
+                    // Cashback is now handled within the item row, so we just add its value to the subtotal
+                    subTotal += total;
+                } else if (item.type === 'discount') {
+                    discountRows.push({
+                        'Deskripsi': item.displayName,
+                        'Kuantitas': '',
+                        'Harga Satuan': '',
+                        'Cash Back': '',
+                        'Total': price
+                    });
+                }
+            });
+
+            const finalData = [];
+            finalData.push(['Deskripsi', 'Kuantitas', 'Harga Satuan', 'Cash Back', 'Total']);
+            itemRows.forEach(row => finalData.push(Object.values(row)));
+
+            finalData.push([]); // Spacer
+            finalData.push(['', '', '', 'Subtotal', subTotal]);
+
+            if (discountRows.length > 0) {
+                 finalData.push([]); // Spacer
+                 finalData.push(['Potongan Penjualan']);
+                 discountRows.forEach(row => finalData.push(Object.values(row)));
+            }
+
+            const grandTotal = shoppingList.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+            finalData.push([]); // Spacer
+            finalData.push(['', '', '', 'Grand Total', grandTotal]);
+
+
+            const worksheet = XLSX.utils.aoa_to_sheet(finalData);
+            worksheet['!cols'] = [{ wch: 45 }, { wch: 10 }, { wch: 20 }, { wch: 20 }, { wch: 20 }];
+
+            const workbook = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(workbook, worksheet, 'List Barang');
+            XLSX.writeFile(workbook, 'List_Belanja.xlsx');
+        }
+
+        // Export Filtered Results to Excel
+        function exportFilteredToExcel(priceType, profitPercentage) {
+            if (currentResults.length === 0) {
+                showMessageBox('Tidak ada hasil pencarian untuk diekspor.');
+                return;
+            }
+
+            const finalData = [];
+            
+            // Header
+            let priceHeaderName = 'Harga (Net)';
+            if (priceType === 'retail') priceHeaderName = 'Harga Retail (Net)';
+            if (priceType === 'grosir') priceHeaderName = 'Harga Grosir (Net)';
+            if (priceType === 'modal') priceHeaderName = `Harga Modal + Profit ${profitPercentage}%`;
+
+            finalData.push(['Nama Barang', 'Stok Total', priceHeaderName]);
+
+            currentResults.forEach(row => {
+                const name = row[namaBarangColumnIndex];
+                const stock = row[stokColumnIndices['Stok Total']] || 0;
+                const cashBack = parseFloat(row[cashBackColumnIndex]) || 0;
+                
+                let basePrice = 0;
+                if (priceType === 'retail') {
+                    basePrice = parseFloat(row[retailColumnIndex]) || 0;
+                } else if (priceType === 'grosir') {
+                    basePrice = parseFloat(row[grosirColumnIndex]) || 0;
+                } else if (priceType === 'modal') {
+                    basePrice = parseFloat(row[modalColumnIndex]) || 0;
+                }
+
+                // Kalkulasi harga dikurangi cashback agar akurat (sama seperti di list barang)
+                const netBasePrice = basePrice - cashBack;
+                let finalPrice = netBasePrice;
+
+                // Jika modal, terapkan markup profit
+                if (priceType === 'modal') {
+                    finalPrice = netBasePrice + (netBasePrice * (profitPercentage / 100));
+                }
+
+                finalData.push([name, stock, finalPrice]);
+            });
+
+            const worksheet = XLSX.utils.aoa_to_sheet(finalData);
+            // Mengatur lebar kolom (Nama Barang, Stok, Harga)
+            worksheet['!cols'] = [{ wch: 50 }, { wch: 15 }, { wch: 25 }];
+
+            const workbook = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(workbook, worksheet, 'Hasil Filter');
+            XLSX.writeFile(workbook, `Ekspor_Hasil_Pencarian.xlsx`);
+        }
+
+        // Tambahkan Hasil Filter ke List Barang
+        function exportFilteredToList(priceType, profitPercentage) {
+            let addedCount = 0;
+            let skipCount = 0;
+
+            currentResults.forEach(rowData => {
+                const itemName = rowData[namaBarangColumnIndex];
+                // Cek apakah barang sudah ada di list
+                const isAlreadyInList = shoppingList.some(item => item.type === 'item' && item.originalRow[namaBarangColumnIndex] === itemName);
+                
+                if (!isAlreadyInList) {
+                    const cashBackValue = parseFloat(rowData[cashBackColumnIndex]) || 0;
+                    let basePrice = 0;
+                    
+                    if (priceType === 'retail') {
+                        basePrice = parseFloat(rowData[retailColumnIndex]) || 0;
+                    } else if (priceType === 'grosir') {
+                        basePrice = parseFloat(rowData[grosirColumnIndex]) || 0;
+                    } else if (priceType === 'modal') {
+                        basePrice = parseFloat(rowData[modalColumnIndex]) || 0;
+                    }
+
+                    // Kalkulasi harga dikurangi cashback agar dasar profit akurat
+                    const netBasePrice = basePrice - cashBackValue;
+                    let finalNetPrice = netBasePrice;
+
+                    // Jika modal, terapkan markup profit
+                    if (priceType === 'modal') {
+                        finalNetPrice = netBasePrice + (netBasePrice * (profitPercentage / 100));
+                    }
+
+                    // Kembalikan ke format harga kotor untuk dimasukkan ke list (karena List Barang otomatis membuat row potongan cashback)
+                    const grossPriceForList = finalNetPrice + cashBackValue;
+                    const uniqueId = crypto.randomUUID();
+
+                    // Tambahkan barang utama
+                    shoppingList.push({
+                        id: uniqueId,
+                        type: 'item',
+                        originalRow: rowData,
+                        displayName: itemName,
+                        quantity: 1, // Kuantitas default 1
+                        price: grossPriceForList
+                    });
+
+                    // Tambahkan baris cashback jika ada
+                    if (cashBackValue > 0) {
+                        shoppingList.push({
+                            id: uniqueId,
+                            type: 'cashback',
+                            originalRow: rowData,
+                            displayName: `Cash Back - ${itemName}`,
+                            quantity: 1,
+                            price: -cashBackValue
+                        });
+                    }
+                    addedCount++;
+                } else {
+                    skipCount++;
+                }
+            });
+
+            renderShoppingList();
+            
+            if (skipCount > 0) {
+                showToast(`${addedCount} barang ditambahkan. ${skipCount} dilewati (sudah ada di list).`, 4000);
+            } else {
+                showToast(`${addedCount} barang berhasil ditambahkan ke List!`);
+            }
+        }
+
+        // --- FUNGSI KATALOG ---
+
+        // Siapkan fallback image error & slot kosong dengan Base64 SVG Lokal
+        const errorSvg = `<svg xmlns="http://www.w3.org/2000/svg" width="400" height="400" viewBox="0 0 400 400"><rect width="400" height="400" fill="#fee2e2"/><text x="50%" y="50%" dominant-baseline="middle" text-anchor="middle" font-family="sans-serif" font-size="18" fill="#ef4444">Gambar Gagal Dimuat</text></svg>`;
+        const errorBase64 = `data:image/svg+xml;base64,${btoa(errorSvg)}`;
+        
+        const noMoreSvg = `<svg xmlns="http://www.w3.org/2000/svg" width="400" height="400" viewBox="0 0 400 400"><rect width="400" height="400" fill="#f3f4f6"/><text x="50%" y="50%" dominant-baseline="middle" text-anchor="middle" font-family="sans-serif" font-size="16" fill="#6b7280">Tidak ada gambar lain</text></svg>`;
+        const noMoreBase64 = `data:image/svg+xml;base64,${btoa(noMoreSvg)}`;
+
+        // SVG Kotak Kosong Transparan untuk inisialisasi awal
+        const emptyBoxBase64 = `data:image/svg+xml;base64,${btoa('<svg xmlns="http://www.w3.org/2000/svg" width="400" height="400" viewBox="0 0 400 400"><rect width="400" height="400" fill="#f3f4f6"/></svg>')}`;
+
+        // Inisialisasi State Gambar Katalog secara Dinamis
+        function getOrCreateCatalogImages(itemId, itemName) {
+            if (!catalogImagesState[itemId]) {
+                catalogImagesState[itemId] = {
+                    currentIndex: 0,
+                    // Dimulai dengan 1 slot kosong untuk memicu loading, akan bertambah otomatis
+                    images: [emptyBoxBase64],
+                    _tempUrls: [], // Buffer untuk menyimpan gambar fase 2
+                    currentOffset: 0 // Menyimpan posisi halaman pencarian saat ini
+                };
+            }
+            return catalogImagesState[itemId];
+        }
+
+        // Tampilkan antarmuka Katalog
+        function showCatalog() {
+            const items = shoppingList.filter(item => item.type === 'item');
+            if (items.length === 0) {
+                showMessageBox("List barang kosong. Tambahkan barang terlebih dahulu untuk membuat katalog.");
+                return;
+            }
+
+            // Sembunyikan elemen utama, tampilkan katalog
+            searchFilterContainer.classList.add('hidden');
+            resultsSection.classList.add('hidden');
+            shoppingListSection.classList.add('hidden');
+            fileUploadSection.classList.add('hidden');
+            appTitle.parentElement.classList.remove('bg-white', 'shadow-lg'); 
+            catalogSection.classList.remove('hidden');
+            
+            renderCatalogGrid(items);
+
+            // Mulai pencarian otomatis di latar belakang untuk barang yang masih kosong
+            autoFetchMissingImages(items);
+        }
+
+        // Fungsi memuat gambar secara otomatis di latar belakang saat katalog dibuka
+        async function autoFetchMissingImages(items) {
+            // Fase 1: Ambil gambar urutan pertama untuk semua barang secara paralel (batch 3) agar sangat cepat
+            const batchSize = 3;
+            for (let i = 0; i < items.length; i += batchSize) {
+                const batch = items.slice(i, i + batchSize);
+                const promises = batch.map(item => {
+                    const state = catalogImagesState[item.id];
+                    // Cek apakah gambar slot pertama masih berupa kotak kosong inisialisasi
+                    if (state && state.images[0] === emptyBoxBase64) {
+                        return autoFetchSingleImage(item.id, item.displayName, true, true);
+                    }
+                    return Promise.resolve();
+                });
+                await Promise.all(promises);
+                // Jeda 500ms antar batch agar server tidak memblokir kita
+                await new Promise(resolve => setTimeout(resolve, 500));
+            }
+
+            // Fase 2: Setelah semua gambar pertama tertampil, muat gambar sisanya
+            for (const item of items) {
+                const state = catalogImagesState[item.id];
+                if (state && state._tempUrls && state._tempUrls.length > 0) {
+                    state.images = state._tempUrls; // Update ukuran array secara dinamis
+                    state._tempUrls = [];
+                    
+                    // Update indikator jumlah total di UI jika tertampil
+                    const totalIndicator = document.getElementById(`cat-total-${item.id}`);
+                    if (totalIndicator) totalIndicator.textContent = state.images.length;
+                }
+            }
+        }
+
+        // Render kartu-kartu di dalam Grid Katalog
+        function renderCatalogGrid(items) {
+            catalogGrid.innerHTML = '';
+
+            items.forEach(item => {
+                const state = getOrCreateCatalogImages(item.id, item.displayName);
+                const currentImgSrc = state.images[state.currentIndex];
+                
+                // Hitung harga bersih (setelah dikurangi cash back)
+                const cashBackValue = parseFloat(item.originalRow[cashBackColumnIndex]) || 0;
+                const netPrice = item.price - cashBackValue;
+                
+                // Atur visibilitas gambar vs animasi loading
+                const isLoading = currentImgSrc === emptyBoxBase64;
+                const imgHiddenClass = isLoading ? 'hidden' : '';
+                const loaderHiddenClass = isLoading ? '' : 'hidden';
+
+                const card = document.createElement('div');
+                card.className = 'catalog-card bg-white border border-gray-200 rounded-xl shadow-md overflow-hidden relative group hover:shadow-lg transition duration-200 flex flex-col h-full';
+                
+                card.innerHTML = `
+                    <!-- Container Gambar dengan Aspek Rasio Kotak (1:1) -->
+                    <div class="relative w-full pt-[100%] bg-white border-b border-gray-200">
+                        
+                        <!-- Tombol Hapus Langsung di Katalog -->
+                        <button onclick="removeCatalogItem('${item.id}', '${item.displayName.replace(/'/g, "\\'")}')" class="absolute top-2 left-2 z-30 bg-red-500/80 hover:bg-red-600 text-white w-8 h-8 rounded-full shadow-md flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300 no-print" title="Hapus dari Katalog & List">
+                            <i class="fas fa-trash-alt text-sm pointer-events-none"></i>
+                        </button>
+
+                        <!-- Indikator Loading (Muncul saat menunggu hasil pencarian) -->
+                        <div id="cat-loader-${item.id}" class="absolute inset-0 flex flex-col items-center justify-center bg-gray-50 text-gray-400 ${loaderHiddenClass}">
+                            <i class="fas fa-spinner fa-spin text-3xl mb-3 text-blue-500"></i>
+                            <span class="text-xs font-semibold tracking-wide">Memuat Gambar...</span>
+                        </div>
+
+                        <!-- Gambar Utama (Klik untuk buka Popup Pencarian Gambar) -->
+                        <img id="cat-img-${item.id}" src="${currentImgSrc}" alt="${item.displayName}" 
+                             onerror="this.onerror=null; this.src='${errorBase64}'; document.getElementById('cat-loader-${item.id}').classList.add('hidden'); this.classList.remove('hidden');"
+                             onclick="openImageGalleryModal('${item.id}')"
+                             class="absolute top-0 left-0 w-full h-full object-contain p-2 bg-white cursor-pointer hover:scale-105 transition-transform duration-300 ${imgHiddenClass}"
+                             title="Klik untuk memilih dari hasil pencarian web">
+                        
+                        <!-- Navigasi Slider (Kiri/Kanan) -->
+                        <div class="absolute inset-0 z-10 flex items-center justify-between px-2 no-print opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none">
+                            <button onclick="changeImageSlot('${item.id}', -1)" class="bg-black/60 text-white rounded-full w-8 h-8 flex items-center justify-center hover:bg-black/80 shadow-lg backdrop-blur-sm transition transform hover:scale-110 pointer-events-auto">
+                                <i class="fas fa-chevron-left text-sm pointer-events-none"></i>
+                            </button>
+                            <button onclick="changeImageSlot('${item.id}', 1)" class="bg-black/60 text-white rounded-full w-8 h-8 flex items-center justify-center hover:bg-black/80 shadow-lg backdrop-blur-sm transition transform hover:scale-110 pointer-events-auto">
+                                <i class="fas fa-chevron-right text-sm pointer-events-none"></i>
+                            </button>
+                        </div>
+
+                        <!-- Indikator Slot Gambar (Dinamis) -->
+                        <div class="absolute bottom-2 right-2 z-10 bg-black/70 text-white text-[0.65rem] font-bold px-2 py-1 rounded-full no-print backdrop-blur-sm shadow-sm tracking-widest">
+                            <span id="cat-idx-${item.id}">${state.currentIndex + 1}</span>/<span id="cat-total-${item.id}">${state.images.length}</span>
+                        </div>
+
+                        <!-- Menu Dropdown Aksi (Hitbox HANYA tepat di area titik tiga) -->
+                        <div class="absolute top-2 right-2 z-30 no-print group/menu">
+                            <!-- Indikator Titik Tiga (Muncul saat kotak produk di-hover) -->
+                            <div class="bg-white/80 backdrop-blur-sm text-gray-700 w-8 h-8 rounded-full shadow-md flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300 cursor-pointer">
+                                <i class="fas fa-ellipsis-v pointer-events-none"></i>
+                            </div>
+                            
+                            <!-- Daftar Tombol Aksi (Otomatis turun ke bawah SAAT titik tiga di-hover) -->
+                            <!-- position absolute memastikan list ini menggantung dan tidak memperbesar area sensor awal -->
+                            <div class="absolute top-full right-0 flex flex-col items-end gap-1.5 mt-1.5 opacity-0 invisible group-hover/menu:opacity-100 group-hover/menu:visible transition-all duration-200 translate-y-[-10px] group-hover/menu:translate-y-0">
+                                 <button onclick="autoFetchSingleImage('${item.id}', '${item.displayName}', false, false)" class="bg-yellow-500 text-white w-8 h-8 rounded-full shadow-lg hover:bg-yellow-600 transition transform hover:scale-110 flex items-center justify-center" title="Auto Cari Gambar Pertama dari Web">
+                                     <i id="icon-auto-${item.id}" class="fas fa-magic text-sm pointer-events-none"></i>
+                                 </button>
+                                 <button onclick="editImageUrl('${item.id}')" class="bg-blue-500 text-white w-8 h-8 rounded-full shadow-lg hover:bg-blue-600 transition transform hover:scale-110 flex items-center justify-center" title="Tempel (Paste) Tautan Gambar Sendiri">
+                                     <i class="fas fa-pencil-alt text-sm pointer-events-none"></i>
+                                 </button>
+                                 <button onclick="window.open('https://www.google.com/search?tbm=isch&q=${encodeURIComponent(item.displayName)}', '_blank')" class="bg-indigo-500 text-white w-8 h-8 rounded-full shadow-lg hover:bg-indigo-600 transition transform hover:scale-110 flex items-center justify-center" title="Cari di Google Images">
+                                     <i class="fab fa-google text-sm pointer-events-none"></i>
+                                 </button>
+                                 <button onclick="window.open('https://www.bing.com/images/search?q=${encodeURIComponent(item.displayName)}', '_blank')" class="bg-teal-500 text-white w-8 h-8 rounded-full shadow-lg hover:bg-teal-600 transition transform hover:scale-110 flex items-center justify-center" title="Cari di Bing Images">
+                                     <i class="fab fa-microsoft text-sm pointer-events-none"></i>
+                                 </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Informasi Produk -->
+                    <div class="p-4 flex-grow flex flex-col justify-between">
+                        <h3 class="font-bold text-gray-800 text-sm md:text-base leading-snug line-clamp-2 mb-2">${item.displayName}</h3>
+                        <div class="mt-auto">
+                            ${cashBackValue > 0 ? `<p class="text-xs text-gray-400 line-through mb-0.5">${formatCurrency(item.price)}</p>` : ''}
+                            <p class="text-lg font-black text-indigo-600">${formatCurrency(netPrice)}</p>
+                        </div>
+                    </div>
+                `;
+                catalogGrid.appendChild(card);
+            });
+        }
+
+        // --- FUNGSI AUTO-FETCH MULTIPLE GAMBAR DARI WEB MELALUI CORS PROXY ---
+        async function fetchMultipleImagesFromWeb(query, engine = 'bing', offset = 0) {
+            let searchUrl;
+            if (engine === 'google') {
+                searchUrl = `https://www.google.com/search?tbm=isch&q=${encodeURIComponent(query)}&start=${offset}`;
+            } else {
+                let bingOffset = offset === 0 ? 1 : offset + 1; // Bing menggunakan index halaman yang sedikit berbeda
+                searchUrl = `https://www.bing.com/images/search?q=${encodeURIComponent(query)}&first=${bingOffset}`;
+            }
+            
+            // Peningkatan Proxy: Gunakan 'raw' dari allorigins dan tambahkan corsproxy.io
+            const proxies = [
+                `https://api.allorigins.win/raw?url=${encodeURIComponent(searchUrl)}`,
+                `https://corsproxy.io/?${encodeURIComponent(searchUrl)}`,
+                `https://api.codetabs.com/v1/proxy?quest=${encodeURIComponent(searchUrl)}`
+            ];
+
+            for (let i = 0; i < proxies.length; i++) {
+                try {
+                    // Batas waktu diturunkan jadi 8 detik per proxy agar jika macet bisa cepat pindah
+                    const controller = new AbortController();
+                    const timeoutId = setTimeout(() => controller.abort(), 8000);
+
+                    const response = await fetch(proxies[i], { signal: controller.signal });
+                    clearTimeout(timeoutId);
+                    
+                    if (!response.ok) continue;
+
+                    // Langsung baca sebagai Text HTML (karena kita pakai endpoint raw/proxy langsung)
+                    const htmlContent = await response.text();
+                    
+                    if (htmlContent) {
+                        const imageUrls = [];
+                        
+                        if (engine === 'bing') {
+                            // Menangani 2 tipe format struktur HTML Bing yang sering berubah-ubah
+                            const regex1 = /&quot;murl&quot;:&quot;(.*?)&quot;/g;
+                            const regex2 = /"murl":"(.*?)"/g;
+                            
+                            let match;
+                            while ((match = regex1.exec(htmlContent)) !== null && imageUrls.length < 20) {
+                                if (!imageUrls.includes(match[1])) imageUrls.push(match[1]);
+                            }
+                            if (imageUrls.length === 0) {
+                                while ((match = regex2.exec(htmlContent)) !== null && imageUrls.length < 20) {
+                                    if (!imageUrls.includes(match[1])) imageUrls.push(match[1]);
+                                }
+                            }
+                        } else if (engine === 'google') {
+                            // Google sangat kompleks. Coba cari URL gambar asli (beresolusi tinggi)
+                            const regexHighRes1 = /\["(https:\/\/[^"]+\.(?:jpg|jpeg|png|webp|gif))",\d+,\d+\]/gi;
+                            const regexHighRes2 = /"ou":"(.*?)"/g;
+                            // Fallback jika Google memblokir dan hanya memberikan thumbnail terenkripsi
+                            const regexThumb = /src="(https:\/\/encrypted-tbn0\.gstatic\.com\/images\?q=tbn:[^"]+)"/g;
+                            
+                            let match;
+                            // Coba Ekstrak High-Res 1
+                            while ((match = regexHighRes1.exec(htmlContent)) !== null && imageUrls.length < 20) {
+                                if (!imageUrls.includes(match[1])) imageUrls.push(match[1]);
+                            }
+                            // Coba Ekstrak High-Res 2 (Layout Lama)
+                            if (imageUrls.length === 0) {
+                                while ((match = regexHighRes2.exec(htmlContent)) !== null && imageUrls.length < 20) {
+                                    if (!imageUrls.includes(match[1])) imageUrls.push(match[1]);
+                                }
+                            }
+                            // Fallback ke Thumbnail (Layout Mobile/Terblokir)
+                            if (imageUrls.length === 0) {
+                                while ((match = regexThumb.exec(htmlContent)) !== null && imageUrls.length < 20) {
+                                    if (!imageUrls.includes(match[1])) imageUrls.push(match[1]);
+                                }
+                            }
+                        }
+                        
+                        if (imageUrls.length > 0) {
+                            return imageUrls; // Kembalikan array URL gambar
+                        }
+                    }
+                } catch (e) {
+                    console.warn(`Pengambilan gambar via proxy ke-${i + 1} gagal:`, e.message);
+                }
+            }
+            return null; // Semua upaya proxy gagal
+        }
+
+        window.autoFetchSingleImage = async function(itemId, itemName, silent = false, firstOnly = false) {
+            const icon = document.getElementById(`icon-auto-${itemId}`);
+            const imgElement = document.getElementById(`cat-img-${itemId}`);
+            const loaderElement = document.getElementById(`cat-loader-${itemId}`);
+            const state = catalogImagesState[itemId];
+            
+            if (!state) return;
+
+            // Efek Loading (Putar)
+            if (icon) {
+                icon.classList.remove('fa-magic');
+                icon.classList.add('fa-spinner', 'fa-spin');
+            }
+            if (loaderElement && !imgElement.src) {
+                loaderElement.classList.remove('hidden');
+                imgElement.classList.add('hidden');
+            }
+
+            // Memanggil fungsi pencarian (Default pakai Bing) dengan offset halaman pertama (0)
+            const imageUrls = await fetchMultipleImagesFromWeb(itemName, 'bing', 0);
+
+            if (imageUrls && imageUrls.length > 0) {
+                if (firstOnly) {
+                    // FASE 1: Hanya tampilkan gambar pertama ke UI, simpan sisanya ke buffer
+                    state.images[0] = imageUrls[0];
+                    state._tempUrls = imageUrls;
+                } else {
+                    // MUAT SEMUA: Replace state dengan array dinamis yang baru
+                    state.images = imageUrls;
+                    state._tempUrls = [];
+                }
+                
+                // Perbarui gambar di UI & hilangkan loader
+                if (imgElement && state.currentIndex === 0) {
+                    imgElement.src = state.images[0];
+                    imgElement.classList.remove('hidden');
+                }
+                
+                // Update text counter
+                const totalIndicator = document.getElementById(`cat-total-${itemId}`);
+                if (totalIndicator) totalIndicator.textContent = firstOnly ? (imageUrls.length || 1) : state.images.length;
+                
+                if (loaderElement) loaderElement.classList.add('hidden');
+                
+                if (!silent) showToast(`Berhasil mengambil gambar otomatis!`);
+            } else {
+                // Jika gagal total
+                state.images = [errorBase64];
+                if (imgElement) {
+                    imgElement.src = state.images[0];
+                    imgElement.classList.remove('hidden');
+                }
+                const totalIndicator = document.getElementById(`cat-total-${itemId}`);
+                if (totalIndicator) totalIndicator.textContent = 1;
+                
+                if (loaderElement) loaderElement.classList.add('hidden');
+                
+                if (!silent) showToast(`Gagal: Diblokir browser atau server sibuk. Silakan isi manual.`);
+            }
+
+            // Hapus Efek Loading di tombol
+            if (icon) {
+                icon.classList.remove('fa-spinner', 'fa-spin');
+                icon.classList.add('fa-magic');
+            }
+        };
+
+        // Event Listener untuk Tombol "Auto Cari Semua"
+        autoFetchAllButton.addEventListener('click', async () => {
+            const items = shoppingList.filter(item => item.type === 'item');
+            if (items.length === 0) return;
+
+            showToast("Memulai pencarian gambar otomatis... Mohon tunggu.");
+            
+            // Ubah teks tombol menjadi memproses
+            const originalHtml = autoFetchAllButton.innerHTML;
+            autoFetchAllButton.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>Memproses...';
+            autoFetchAllButton.disabled = true;
+            autoFetchAllButton.classList.add('opacity-75', 'cursor-not-allowed');
+
+            // Setel ulang gambar menjadi kosong agar autoFetchMissingImages mengambil ulang
+            for (const item of items) {
+                catalogImagesState[item.id].images = [emptyBoxBase64];
+                catalogImagesState[item.id].currentOffset = 0;
+            }
+            
+            // Jalankan fungsi Fase 1 dan Fase 2
+            await autoFetchMissingImages(items);
+
+            // Kembalikan tombol seperti semula
+            autoFetchAllButton.innerHTML = originalHtml;
+            autoFetchAllButton.disabled = false;
+            autoFetchAllButton.classList.remove('opacity-75', 'cursor-not-allowed');
+            showToast("Selesai! Seluruh gambar telah diperbarui.");
+        });
+
+        // Logika Mengubah Slot Gambar Kiri/Kanan
+        window.changeImageSlot = function(itemId, direction) {
+            const state = catalogImagesState[itemId];
+            if (!state) return;
+
+            // Update indeks menggunakan logika modular sesuai panjang array yang dinamis
+            let newIndex = state.currentIndex + direction;
+            const max = state.images.length;
+            
+            if (newIndex < 0) newIndex = max - 1;
+            if (newIndex >= max) newIndex = 0;
+            
+            state.currentIndex = newIndex;
+
+            // Perbarui elemen HTML
+            const imgElement = document.getElementById(`cat-img-${itemId}`);
+            const indexIndicator = document.getElementById(`cat-idx-${itemId}`);
+            
+            if (imgElement) imgElement.src = state.images[state.currentIndex];
+            if (indexIndicator) indexIndicator.textContent = state.currentIndex + 1;
+        };
+
+        // Buka Popup Galeri Pencarian Web (Dengan Fitur Load More)
+        window.openImageGalleryModal = function(itemId) {
+            const item = shoppingList.find(i => i.id === itemId);
+            if (!item) return;
+            const itemName = item.displayName;
+            const state = catalogImagesState[itemId];
+            if (!state) return;
+
+            // Pindahkan tempUrls ke images jika ada (dari pencarian Fase 1 ke Fase 2)
+            if (state._tempUrls && state._tempUrls.length > 0) {
+                state.images = [...state._tempUrls];
+                state._tempUrls = [];
+                const totalIndicator = document.getElementById(`cat-total-${itemId}`);
+                if (totalIndicator) totalIndicator.textContent = state.images.length;
+            }
+
+            const dialogId = 'galleryModal';
+            removeDialog(dialogId);
+
+            const overlay = document.createElement('div');
+            overlay.className = 'dialog-overlay';
+            overlay.id = dialogId;
+
+            function renderGrid() {
+                let gridHtml = '<div class="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-2 max-h-[50vh] overflow-y-auto p-2 bg-gray-50 rounded-lg border border-gray-200">';
+                state.images.forEach((src, idx) => {
+                    if (src === emptyBoxBase64) {
+                         gridHtml += `<div class="aspect-square bg-gray-200 animate-pulse rounded border border-gray-300 flex items-center justify-center"><i class="fas fa-spinner fa-spin text-gray-400"></i></div>`;
+                    } else if (src === noMoreBase64 || src === errorBase64) {
+                         // Lewati slot kosong/error
+                    } else {
+                         const isSelected = idx === state.currentIndex ? 'border-4 border-blue-500 shadow-md ring-2 ring-blue-300 scale-105' : 'border border-gray-300 hover:border-blue-400 hover:shadow-sm opacity-80 hover:opacity-100 transition-all cursor-pointer';
+                         gridHtml += `<img src="${src}" class="w-full h-full object-cover rounded ${isSelected} bg-white" onclick="selectImageFromGallery('${itemId}', ${idx})" title="Pilih Gambar Ini">`;
+                    }
+                });
+                gridHtml += '</div>';
+                
+                // Tambahkan tombol Muat Lebih Banyak jika gambar valid tersedia
+                if (state.images.length > 0 && state.images[0] !== emptyBoxBase64 && state.images[0] !== errorBase64) {
+                     gridHtml += `
+                     <div class="text-center mt-4 pt-2 border-t border-gray-200">
+                         <button id="loadMoreBtn-${itemId}" class="bg-indigo-50 text-indigo-700 hover:bg-indigo-100 border border-indigo-200 px-6 py-2.5 rounded-lg font-semibold text-sm transition shadow-sm w-full sm:w-auto">
+                             <i class="fas fa-plus-circle mr-2"></i>Muat Lebih Banyak Gambar
+                         </button>
+                     </div>`;
+                }
+                
+                return gridHtml;
+            }
+            
+            // Attach event load more (Harus dipanggil setiap grid di render ulang)
+            const attachLoadMoreEvent = () => {
+                const loadMoreBtn = document.getElementById(`loadMoreBtn-${itemId}`);
+                if (loadMoreBtn) {
+                    loadMoreBtn.onclick = () => performInAppSearch(true);
+                }
+            };
+
+            overlay.innerHTML = `
+                <div class="dialog-box" style="max-width: 800px; width: 95%;">
+                    <div class="flex justify-between items-center mb-3 border-b pb-2">
+                        <h3 class="text-lg font-bold text-gray-800 text-left flex-1 line-clamp-1"><i class="fas fa-globe mr-2 text-blue-500"></i>Mini Browser Gambar</h3>
+                        <button class="text-gray-400 hover:text-red-500 transition ml-4" onclick="removeDialog('${dialogId}')"><i class="fas fa-times text-xl"></i></button>
+                    </div>
+                    
+                    <!-- Search Bar Internal dengan Pilihan Engine -->
+                    <div class="flex gap-2 mb-4 relative shadow-sm flex-col sm:flex-row">
+                        <select id="modalSearchEngine-${itemId}" class="border border-gray-300 rounded-lg px-3 py-2 outline-none focus:ring-2 focus:ring-blue-500 text-gray-700 bg-gray-50 font-semibold shadow-sm w-full sm:w-auto cursor-pointer" title="Pilih Mesin Pencari">
+                            <option value="bing">Bing (Disarankan)</option>
+                            <option value="google">Google</option>
+                        </select>
+                        <div class="relative flex-1">
+                            <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                <i class="fas fa-search text-gray-400"></i>
+                            </div>
+                            <input type="text" id="modalSearchInput-${itemId}" value="${itemName}" class="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none text-gray-700 bg-white" placeholder="Ketik nama atau spesifikasi barang...">
+                        </div>
+                        <button id="modalSearchBtn-${itemId}" class="bg-blue-600 hover:bg-blue-700 text-white px-5 py-2 rounded-lg transition font-semibold flex items-center shadow-md justify-center w-full sm:w-auto">
+                            Cari Baru
+                        </button>
+                    </div>
+                    
+                    <div id="galleryGridContainer">
+                        <!-- Grid Rendered Here -->
+                    </div>
+                    
+                    <div class="mt-4 flex flex-col sm:flex-row flex-wrap justify-between items-center gap-3 border-t pt-3">
+                        <div class="flex gap-2 w-full sm:w-auto flex-col sm:flex-row">
+                            <button onclick="window.open('https://www.google.com/search?tbm=isch&q=${encodeURIComponent(itemName)}', '_blank')" class="text-xs text-gray-600 hover:text-blue-600 transition flex items-center bg-gray-100 px-3 py-2 rounded-md hover:bg-blue-50 flex-1 justify-center border border-gray-300">
+                                <i class="fab fa-google mr-2 text-red-500"></i>Tab Google
+                            </button>
+                            <button onclick="window.open('https://www.bing.com/images/search?q=${encodeURIComponent(itemName)}', '_blank')" class="text-xs text-gray-600 hover:text-teal-600 transition flex items-center bg-gray-100 px-3 py-2 rounded-md hover:bg-teal-50 flex-1 justify-center border border-gray-300">
+                                <i class="fab fa-microsoft mr-2 text-teal-500"></i>Tab Bing
+                            </button>
+                        </div>
+                        <button class="dialog-btn-cancel w-full sm:w-auto" onclick="removeDialog('${dialogId}')">Tutup</button>
+                    </div>
+                </div>
+            `;
+            document.body.appendChild(overlay);
+            
+            // Logika Search Bar Internal
+            const searchInput = document.getElementById(`modalSearchInput-${itemId}`);
+            const searchBtn = document.getElementById(`modalSearchBtn-${itemId}`);
+            const searchEngineSelect = document.getElementById(`modalSearchEngine-${itemId}`);
+
+            const performInAppSearch = async (isLoadMore = false) => {
+                const query = searchInput.value.trim();
+                const engineChoice = searchEngineSelect.value;
+                if(!query) return;
+
+                const container = document.getElementById('galleryGridContainer');
+                let loadMoreBtn = document.getElementById(`loadMoreBtn-${itemId}`);
+
+                if (isLoadMore) {
+                    state.currentOffset += 20; // Maju 20 item
+                    if (loadMoreBtn) {
+                        loadMoreBtn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>Memuat...';
+                        loadMoreBtn.disabled = true;
+                    }
+                } else {
+                    state.currentOffset = 0; // Reset pagination untuk pencarian baru
+                    container.innerHTML = `<div class="py-12 text-center"><i class="fas fa-spinner fa-spin text-4xl text-blue-500 mb-4"></i><p class="text-gray-600 font-medium">Mencari gambar "${query}" di ${engineChoice === 'google' ? 'Google' : 'Bing'}...</p></div>`;
+                    searchBtn.disabled = true;
+                    searchBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+                }
+
+                // Fetch gambar
+                const imageUrls = await fetchMultipleImagesFromWeb(query, engineChoice, state.currentOffset);
+                
+                if (imageUrls && imageUrls.length > 0) {
+                    if (isLoadMore) {
+                        // Hilangkan placeholder/error jika ada, lalu tambah yang baru tanpa duplikat
+                        state.images = state.images.filter(img => img !== emptyBoxBase64 && img !== errorBase64);
+                        imageUrls.forEach(url => {
+                            if (!state.images.includes(url)) state.images.push(url);
+                        });
+                    } else {
+                        state.images = imageUrls;
+                        state.currentIndex = 0; // Reset slot ke awal hasil baru
+                    }
+                    
+                    if(document.getElementById(dialogId)) {
+                        document.getElementById('galleryGridContainer').innerHTML = renderGrid();
+                        attachLoadMoreEvent();
+                    }
+                    
+                    // Update gambar di latar belakang katalog & counter-nya
+                    const imgElement = document.getElementById(`cat-img-${itemId}`);
+                    const indexIndicator = document.getElementById(`cat-idx-${itemId}`);
+                    const totalIndicator = document.getElementById(`cat-total-${itemId}`);
+                    
+                    if (imgElement && !isLoadMore) imgElement.src = state.images[0];
+                    if (indexIndicator && !isLoadMore) indexIndicator.textContent = '1';
+                    if (totalIndicator) totalIndicator.textContent = state.images.length;
+
+                } else {
+                    if (isLoadMore) {
+                        showToast("Tidak ada gambar lain yang ditemukan.");
+                        if (loadMoreBtn) {
+                            loadMoreBtn.innerHTML = '<i class="fas fa-check-circle mr-2"></i>Semua Ditampilkan';
+                            loadMoreBtn.disabled = true;
+                            loadMoreBtn.classList.replace('bg-indigo-50', 'bg-gray-100');
+                            loadMoreBtn.classList.replace('text-indigo-700', 'text-gray-500');
+                        }
+                    } else {
+                        state.images = [errorBase64];
+                        container.innerHTML = `<div class="py-12 text-center text-red-500"><i class="fas fa-exclamation-triangle text-4xl mb-4"></i><p class="font-medium">Gagal menemukan gambar.</p><p class="text-sm mt-2 text-gray-500">Coba kata kunci yang lebih umum.</p></div>`;
+                    }
+                }
+
+                if (!isLoadMore) {
+                    searchBtn.disabled = false;
+                    searchBtn.textContent = 'Cari Baru';
+                }
+            };
+
+            searchBtn.onclick = () => performInAppSearch(false);
+            searchInput.onkeypress = (e) => { if(e.key === 'Enter') performInAppSearch(false); };
+            
+            // Inisialisasi awal UI
+            document.getElementById('galleryGridContainer').innerHTML = renderGrid();
+            attachLoadMoreEvent();
+
+            // Fokus otomatis ke input agar user bisa langsung mengetik
+            setTimeout(() => { searchInput.focus(); searchInput.select(); }, 100);
+
+            // Jika belum ada gambar sama sekali (baru diinisialisasi)
+            if (state.images[0] === emptyBoxBase64) {
+                 performInAppSearch(false);
+            }
+        };
+
+        // Pilih Gambar dari Grid Popup
+        window.selectImageFromGallery = function(itemId, index) {
+            const state = catalogImagesState[itemId];
+            if (state) {
+                state.currentIndex = index;
+                const imgElement = document.getElementById(`cat-img-${itemId}`);
+                const indexIndicator = document.getElementById(`cat-idx-${itemId}`);
+                
+                if (imgElement) imgElement.src = state.images[state.currentIndex];
+                if (indexIndicator) indexIndicator.textContent = state.currentIndex + 1;
+            }
+            removeDialog('galleryModal');
+        };
+
+        // Fungsi Menghapus Item Langsung dari Katalog
+        window.removeCatalogItem = function(itemId, itemName) {
+            showConfirmationBox(`Anda yakin ingin menghapus <strong>"${itemName}"</strong> dari katalog?`, () => {
+                // Hapus dari shoppingList (termasuk item dan cashback-nya karena UUID sama)
+                shoppingList = shoppingList.filter(i => i.id !== itemId);
+                
+                // Perbarui tabel list di background
+                renderShoppingList();
+                
+                // Perbarui tampilan katalog tanpa melempar user ke luar halaman
+                const items = shoppingList.filter(item => item.type === 'item');
+                renderCatalogGrid(items);
+                
+                // Jika sudah habis/kosong, beri pemberitahuan di dalam halaman katalog
+                if (items.length === 0) {
+                    catalogGrid.innerHTML = `
+                        <div class="col-span-full text-center py-16 bg-white rounded-xl border border-gray-200 shadow-sm no-print">
+                            <i class="fas fa-box-open text-5xl text-gray-300 mb-4"></i>
+                            <h3 class="text-xl font-bold text-gray-700">Katalog Kosong</h3>
+                            <p class="text-gray-500 mt-2">Semua barang telah dihapus. Silakan klik tombol <strong>Kembali</strong> untuk menambahkan barang baru.</p>
+                        </div>
+                    `;
+                }
+                
+                showToast(`'${itemName}' berhasil dihapus.`);
+            });
+        };
+
+        // Dialog untuk pengguna memasukkan Tautan Gambar manual
+        window.editImageUrl = function(itemId) {
+            const state = catalogImagesState[itemId];
+            if (!state) return;
+            
+            const currentSlot = state.currentIndex + 1;
+            
+            const dialogId = 'editImageDialog';
+            removeDialog(dialogId);
+
+            const overlay = document.createElement('div');
+            overlay.className = 'dialog-overlay';
+            overlay.id = dialogId;
+
+            overlay.innerHTML = `
+                <div class="dialog-box">
+                    <h3 class="text-lg font-bold text-gray-800 mb-2">Ubah Gambar (Slot ${currentSlot}/20)</h3>
+                    <p class="text-xs text-gray-600 mb-4 text-left">Pilih gambar dari web (Google/Dll), klik kanan dan pilih <strong>"Copy Image Address"</strong>, lalu tempel tautan di bawah ini.</p>
+                    <div class="dialog-input-group">
+                        <input type="url" id="customImageUrlInput" placeholder="https://contoh.com/gambar.jpg" class="w-full p-2.5 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 outline-none">
+                    </div>
+                    <div class="dialog-buttons">
+                        <button class="dialog-btn-cancel">Batal</button>
+                        <button class="dialog-btn-add"><i class="fas fa-save mr-2"></i>Simpan</button>
+                    </div>
+                </div>
+            `;
+            document.body.appendChild(overlay);
+
+            const saveBtn = overlay.querySelector('.dialog-btn-add');
+            const cancelBtn = overlay.querySelector('.dialog-btn-cancel');
+            const urlInput = overlay.querySelector('#customImageUrlInput');
+            
+            // Auto focus
+            setTimeout(() => urlInput.focus(), 100);
+
+            saveBtn.onclick = () => {
+                const newUrl = urlInput.value.trim();
+                if (newUrl) {
+                    // Update array data state
+                    state.images[state.currentIndex] = newUrl;
+                    // Update tampilan UI langsung
+                    const imgElement = document.getElementById(`cat-img-${itemId}`);
+                    if (imgElement) imgElement.src = newUrl;
+                    
+                    showToast(`Gambar slot ${currentSlot} berhasil diperbarui!`);
+                }
+                removeDialog(dialogId);
+            };
+
+            cancelBtn.onclick = () => removeDialog(dialogId);
+        };
+
+        // Menutup Katalog dan kembali ke aplikasi utama
+        backFromCatalogButton.addEventListener('click', () => {
+            catalogSection.classList.add('hidden');
+            searchFilterContainer.classList.remove('hidden');
+            if (currentResults.length > 0) resultsSection.classList.remove('hidden');
+            if (shoppingList.length > 0) shoppingListSection.classList.remove('hidden');
+            appTitle.parentElement.classList.add('bg-white', 'shadow-lg');
+            
+            // Scroll sedikit ke list barang agar terlihat
+            shoppingListSection.scrollIntoView({ behavior: 'smooth' });
+        });
+
+        // Event Listener untuk Ganti Background Cetak
+        changeBgButton.addEventListener('click', () => {
+            bgFileInput.click();
+        });
+
+        bgFileInput.addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            if (!file) return;
+
+            // Pastikan ukurannya tidak terlalu raksasa agar tidak memberatkan browser
+            if (file.size > 5 * 1024 * 1024) {
+                showMessageBox('Ukuran file gambar terlalu besar (Maksimal 5MB). Harap perkecil ukuran gambar Anda.');
+                return;
+            }
+
+            const reader = new FileReader();
+            reader.onload = (event) => {
+                catalogBgBase64 = event.target.result;
+                try {
+                    localStorage.setItem('catalogBgImage', catalogBgBase64);
+                    showToast('Background berhasil diganti dan disimpan!');
+                } catch (error) {
+                    console.warn("Penyimpanan localStorage gagal (mungkin kuota penuh):", error);
+                    showToast('Background diterapkan untuk sesi ini saja (Gambar terlalu besar untuk disimpan permanen).', 4000);
+                }
+            };
+            reader.readAsDataURL(file);
+            
+            // Reset input file agar bisa memilih file yang sama lagi jika perlu
+            bgFileInput.value = '';
+        });
+
+        // Trigger Pencetakan - Diperbarui Menggunakan Tab Baru & Kertas Template
+        printCatalogButton.addEventListener('click', () => {
+            const printContent = document.getElementById('catalogGrid').innerHTML;
+            const printWindow = window.open('', '_blank');
+            
+            if (!printWindow) {
+                showMessageBox('Gagal mencetak: Browser memblokir Tab Baru/Pop-up. Harap izinkan pop-up (Pop-ups allowed) untuk situs ini agar fitur cetak berfungsi.');
+                return;
+            }
+            
+            // Siapkan tag gambar background jika data tersedia
+            const backgroundHtml = catalogBgBase64 
+                ? `<img src="${catalogBgBase64}" class="print-bg" alt="Background Cetak" />` 
+                : '';
+
+            printWindow.document.write(`
+                <!DOCTYPE html>
+                <html lang="id">
+                <head>
+                    <title>Cetak Katalog Produk</title>
+                    <script src="https://cdn.tailwindcss.com"><\/script>
+                    <style>
+                        @media print {
+                            body { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+                            /* Hilangkan margin bawaan kertas agar background penuh */
+                            @page { margin: 0; size: A4 portrait; }
+                        }
+                        body { font-family: 'Inter', sans-serif; background-color: white; margin: 0; padding: 0; }
+                        
+                        /* Latar belakang template yang diulang di setiap halaman */
+                        .print-bg {
+                            position: fixed;
+                            top: 0;
+                            left: 0;
+                            width: 100vw;
+                            height: 100vh;
+                            z-index: -1;
+                            object-fit: cover; /* Pastikan menutupi seluruh halaman A4 */
+                        }
+                        
+                        /* Area konten diberi jarak (padding) agar tidak menutupi header & footer di background */
+                        /* Sesuaikan angka 140px (Atas) dan 160px (Bawah) ini jika list menabrak desain kop surat Anda */
+                        .content-wrapper {
+                            padding: 140px 50px 160px 50px; 
+                            position: relative;
+                            z-index: 1;
+                        }
+
+                        /* Sembunyikan elemen UI interaktif dari halaman cetak */
+                        .z-10, .z-30, button, [id^="cat-loader-"] { display: none !important; }
+                        
+                        /* Setup Grid Cetak - Diperkecil menjadi 5 kolom dan menghapus mode responsif */
+                        .catalog-grid { display: grid !important; grid-template-columns: repeat(5, 1fr) !important; gap: 1rem !important; }
+                        
+                        /* Pastikan kartu punya background putih agar tidak tembus pandang menabrak watermark */
+                        .catalog-card { 
+                            border: 1px solid #e5e7eb; 
+                            border-radius: 0.5rem; 
+                            overflow: hidden; 
+                            page-break-inside: avoid; 
+                            break-inside: avoid; 
+                            display: flex; 
+                            flex-direction: column;
+                            background-color: rgba(255, 255, 255, 0.95); /* Sedikit transparan agar menyatu */
+                            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+                        }
+                        
+                        /* Pastikan gambar tercetak utuh */
+                        .catalog-card img { display: block !important; opacity: 1 !important; visibility: visible !important; }
+                        
+                        /* Sesuaikan ukuran font teks barang saat dicetak agar rapi di kotak yang lebih kecil */
+                        .catalog-card h3 { font-size: 0.75rem !important; line-height: 1.25 !important; margin-bottom: 0.25rem !important; }
+                        .catalog-card p { font-size: 0.85rem !important; margin-top: 0.25rem !important;}
+                    </style>
+                </head>
+                <body>
+                    <!-- Gambar Latar Belakang (Dirender dari Base64 Data Memori) -->
+                    ${backgroundHtml}
+                    
+                    <div class="content-wrapper">
+                        <div class="catalog-grid">
+                            ${printContent}
+                        </div>
+                    </div>
+                    <script>
+                        // Tunggu sesaat agar CSS Tailwind & Gambar Background selesai dimuat
+                        setTimeout(() => {
+                            window.print();
+                            window.onafterprint = () => window.close();
+                        }, 1500);
+                    <\/script>
+                </body>
+                </html>
+            `);
+            printWindow.document.close();
+            
+            // Peringatan jika belum ada background
+            if (!catalogBgBase64) {
+                 showToast('Tip: Anda belum memasukkan background. Klik "Ganti Background" untuk menggunakan kop surat Anda.', 5000);
+            }
+        });
+
+        // Event Listeners
+        searchQueryInput.addEventListener('input', debouncedTriggerSearchAndDisplay);
+        stokTotalMinInput.addEventListener('input', debouncedTriggerSearchAndDisplay);
+        stokLocationSelect.addEventListener('change', triggerSearchAndDisplay);
+        sortColumnSelect.addEventListener('change', triggerSearchAndDisplay);
+        sortOrderSelect.addEventListener('change', triggerSearchAndDisplay);
+
+        // Profit Toggle Event Listener
+        checkProfitButton.addEventListener('click', () => {
+            isLowProfitFilterActive = !isLowProfitFilterActive;
+            
+            if (isLowProfitFilterActive) {
+                checkProfitButton.classList.remove('bg-yellow-500', 'hover:bg-yellow-600');
+                checkProfitButton.classList.add('bg-yellow-700', 'hover:bg-yellow-800');
+                checkProfitButton.innerHTML = '<i class="fas fa-check-square mr-2"></i>Batalkan Cek Profit < 5%';
+                showToast("Memfilter barang dengan profit di bawah 5%");
+            } else {
+                checkProfitButton.classList.add('bg-yellow-500', 'hover:bg-yellow-600');
+                checkProfitButton.classList.remove('bg-yellow-700', 'hover:bg-yellow-800');
+                checkProfitButton.innerHTML = '<i class="fas fa-exclamation-triangle mr-2"></i>Cek Profit < 5%';
+            }
+            triggerSearchAndDisplay();
+        });
+
+        clearSearchButton.addEventListener('click', () => {
+            resetInputs();
+            triggerSearchAndDisplay();
+        });
+        
+        exportFilteredButton.addEventListener('click', () => {
+            if (currentResults.length === 0) {
+                showMessageBox('Tidak ada hasil pencarian. Silakan cari barang terlebih dahulu.');
+                return;
+            }
+            showExportFilteredDialog((action, priceType, profitPercentage) => {
+                if (action === 'excel') {
+                    exportFilteredToExcel(priceType, profitPercentage);
+                    showToast('Hasil pencarian berhasil diekspor ke Excel!');
+                } else if (action === 'list') {
+                    exportFilteredToList(priceType, profitPercentage);
+                    shoppingListSection.scrollIntoView({ behavior: 'smooth' });
+                }
+            });
+        });
+
+        toggleColumnsButton.addEventListener('click', showToggleColumnsDialog);
+
+        // --- TAMBAHAN EVENT LISTENER BARU ---
+
+        // Logika Toggle Pencarian Mengambang
+        fabSearchToggle.addEventListener('click', () => {
+            isSearchPanelOpen = !isSearchPanelOpen;
+            if (isSearchPanelOpen) {
+                floatingSearchPanel.classList.remove('translate-y-8', 'opacity-0', 'pointer-events-none');
+                floatingSearchPanel.classList.add('translate-y-0', 'opacity-100', 'pointer-events-auto');
+                fabSearchIcon.className = 'fas fa-times text-2xl transition-transform duration-300 rotate-90';
+                setTimeout(() => searchQueryInput.focus(), 300);
+            } else {
+                floatingSearchPanel.classList.add('translate-y-8', 'opacity-0', 'pointer-events-none');
+                floatingSearchPanel.classList.remove('translate-y-0', 'opacity-100', 'pointer-events-auto');
+                fabSearchIcon.className = 'fas fa-search text-2xl transition-transform duration-300';
+                historyDropdown.classList.add('hidden');
+            }
+        });
+
+        // Tutup panel pencarian jika klik di luar area (Desktop/Mobile)
+        document.addEventListener('click', (e) => {
+            if (isSearchPanelOpen && !floatingSearchContainer.contains(e.target)) {
+                fabSearchToggle.click();
+            }
+        });
+        
+        // Konfirmasi Ganti Data (Upload Ulang)
+        gantiDataBtn.addEventListener('click', () => {
+            showConfirmationBox('Anda yakin ingin mengganti data Excel? Semua hasil pencarian dan list barang akan direset.', () => {
+                resetUI();
+            }, 'Ya, Ganti Data');
+        });
+
+        // Toggle Filter pada HP
+        btnToggleFilter.addEventListener('click', () => {
+            panelFilter.classList.toggle('hidden');
+        });
+
+        // Buka/Tutup Riwayat Pencarian
+        btnHistory.addEventListener('click', (e) => {
+            e.stopPropagation();
+            historyDropdown.classList.toggle('hidden');
+        });
+
+        // Tutup dropdown jika klik di area luar
+        document.addEventListener('click', (e) => {
+            if (historyDropdown && !historyDropdown.contains(e.target) && e.target !== btnHistory) {
+                historyDropdown.classList.add('hidden');
+            }
+        });
+
+        // Hapus Seluruh Riwayat
+        btnClearHistory.addEventListener('click', (e) => {
+            e.stopPropagation();
+            searchHistory = [];
+            localStorage.removeItem('excelSearchHistory');
+            renderSearchHistory();
+            historyDropdown.classList.add('hidden');
+            showToast('Riwayat pencarian dihapus.');
+        });
+        
+        // Simpan ke riwayat saat pengguna selesai mengetik & berpindah fokus
+        searchQueryInput.addEventListener('change', () => {
+            const query = searchQueryInput.value.trim();
+            if(query.length >= 2) saveToHistory(query);
+        });
+        
+        // Simpan ke riwayat jika pengguna menekan tombol Enter
+        searchQueryInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                const query = searchQueryInput.value.trim();
+                if(query.length >= 2) saveToHistory(query);
+                
+                // Hilangkan keyboard HP
+                searchQueryInput.blur();
+                // Scroll langsung ke hasil jika di HP
+                if(window.innerWidth < 768) {
+                    if (isSearchPanelOpen) fabSearchToggle.click();
+                    resultsSection.scrollIntoView({behavior: 'smooth', block: 'start'});
+                }
+            }
+        });
+        // --- AKHIR TAMBAHAN ---
+
+        createCatalogButton.addEventListener('click', showCatalog);
+        exportListButton.addEventListener('click', exportShoppingListToExcel);
+        
+        clearListButton.addEventListener('click', () => {
+            if(shoppingList.length > 0) {
+                showConfirmationBox('Anda yakin ingin menghapus <strong>semua</strong> barang dari list?', () => {
+                    shoppingList = [];
+                    renderShoppingList();
+                    showToast('Semua barang telah dihapus dari list.');
+                }, 'Ya, Hapus Semua');
+            } else {
+                showMessageBox('List barang sudah kosong.');
+            }
+        });
+
+        addDiscountButton.addEventListener('click', () => {
+            showAddDiscountDialog((name, value) => {
+                shoppingList.push({
+                    id: crypto.randomUUID(),
+                    type: 'discount',
+                    displayName: name,
+                    quantity: 1, // Quantity fixed to 1
+                    price: -Math.abs(value) // Store as a negative value
+                });
+                renderShoppingList();
+                showToast(`Potongan '${name}' berhasil ditambahkan.`);
+            });
+        });
+
+        prevPageButton.addEventListener('click', () => {
+            if (currentPage > 1) {
+                currentPage--;
+                displayResults();
+            }
+        });
+
+        nextPageButton.addEventListener('click', () => {
+            const totalPages = Math.ceil(currentResults.length / rowsPerPage);
+            if (currentPage < totalPages) {
+                currentPage++;
+                displayResults();
+            }
+        });
+    </script>
+</body>
+</html>
