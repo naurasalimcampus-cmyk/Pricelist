@@ -1,0 +1,2284 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Stock Splitter Pro - PT. Candi Jitu Indonesia</title>
+  
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- FontAwesome Icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+  <!-- SheetJS (xlsx) for reading Excel -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+  <!-- ExcelJS for styling, borders, and native conditional formatting -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/exceljs/4.3.0/exceljs.min.js"></script>
+  <!-- FileSaver for reliable browser download -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
+  <!-- jsPDF & autoTable for Portrait PDF Export -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
+
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
+    body {
+      font-family: 'Inter', sans-serif;
+    }
+    .custom-scrollbar::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+    .custom-scrollbar::-webkit-scrollbar-track {
+      background: #f1f5f9;
+      border-radius: 4px;
+    }
+    .custom-scrollbar::-webkit-scrollbar-thumb {
+      background: #cbd5e1;
+      border-radius: 4px;
+    }
+    .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+      background: #94a3b8;
+    }
+  </style>
+</head>
+<body class="bg-slate-50 text-slate-800 min-h-screen flex flex-col antialiased">
+
+  <!-- Top Navigation Header -->
+  <header class="bg-white border-b border-slate-200 sticky top-0 z-30 shadow-xs">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+      <div class="flex items-center gap-3">
+        <div class="w-10 h-10 rounded-xl bg-blue-600 flex items-center justify-center text-white shadow-md shadow-blue-500/20">
+          <i class="fa-solid fa-boxes-stacked text-lg"></i>
+        </div>
+        <div>
+          <h1 class="font-bold text-slate-900 text-lg leading-tight flex items-center gap-2">
+            Stock Splitter Pro
+            <span class="text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 rounded-full bg-blue-100 text-blue-800">Candi Jitu</span>
+          </h1>
+          <p class="text-xs text-slate-500">Pemisah Data Excel Berdasarkan Nama Barang & Petugas</p>
+        </div>
+      </div>
+
+      <div class="flex items-center gap-2">
+        <button id="btnLoadSample" class="px-3.5 py-1.5 rounded-xl border border-blue-200 text-blue-700 bg-blue-50 hover:bg-blue-100 text-xs font-semibold flex items-center gap-2 transition shadow-xs">
+          <i class="fa-regular fa-file-excel text-blue-600"></i>
+          <span>Muat Data Contoh</span>
+        </button>
+        <button id="btnUndo" class="hidden px-3.5 py-1.5 rounded-xl border border-slate-200 text-slate-700 bg-white hover:bg-slate-100 disabled:opacity-40 disabled:cursor-not-allowed text-xs font-semibold flex items-center gap-1.5 transition shadow-xs" title="Batalkan aksi terakhir (Ctrl+Z)">
+          <i class="fa-solid fa-arrow-rotate-left text-slate-500"></i>
+          <span>Undo</span>
+        </button>
+        <button id="btnResetAll" class="hidden px-3.5 py-1.5 rounded-xl border border-red-200 text-red-600 bg-red-50 hover:bg-red-100 text-xs font-semibold flex items-center gap-2 transition shadow-xs">
+          <i class="fa-solid fa-rotate-left"></i>
+          <span>Ganti File</span>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <main class="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-6">
+    
+    <!-- Upload Dropzone (Tampilan Awal) -->
+    <div id="uploadSection" class="w-full">
+      <div id="dropZone" class="border-2 border-dashed border-blue-400 bg-blue-50/40 hover:bg-blue-50/80 transition-all rounded-3xl p-10 sm:p-14 text-center cursor-pointer relative group flex flex-col items-center justify-center shadow-xs">
+        <input type="file" id="fileInput" accept=".xlsx, .xls" class="absolute inset-0 w-full h-full opacity-0 cursor-pointer">
+        
+        <div class="w-16 h-16 rounded-2xl bg-blue-100 text-blue-600 flex items-center justify-center mb-4 group-hover:scale-110 group-hover:bg-blue-600 group-hover:text-white transition-all shadow-sm">
+          <i class="fa-solid fa-cloud-arrow-up text-2xl"></i>
+        </div>
+        
+        <h2 class="text-lg sm:text-xl font-bold text-slate-800 mb-2">
+          Upload File Excel Kuantitas Barang
+        </h2>
+        <p class="text-xs sm:text-sm text-slate-500 max-w-md mx-auto mb-4">
+          Format laporan per gudang (.xlsx, .xls) akan otomatis dibaca baris datanya
+        </p>
+
+        <div class="inline-flex items-center gap-2 text-xs font-medium text-blue-700 bg-blue-100/70 px-3.5 py-1.5 rounded-full border border-blue-200/60">
+          <i class="fa-solid fa-circle-check text-blue-600"></i>
+          <span>Mendukung format file laporan per gudang PT. Candi Jitu</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Main Workspace (Hidden by default until file is uploaded) -->
+    <div id="workspaceSection" class="hidden space-y-6">
+      
+      <!-- Top Overview Stats & Download Bar -->
+      <div class="bg-white rounded-2xl p-4 sm:p-5 border border-slate-200 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4 flex-1">
+          <div class="p-3 bg-slate-50 rounded-xl border border-slate-100">
+            <span class="text-[11px] font-semibold text-slate-400 uppercase tracking-wider block">Total Barang</span>
+            <span id="statTotalItems" class="text-xl font-extrabold text-slate-800">0</span>
+          </div>
+          <div class="p-3 bg-amber-50/60 rounded-xl border border-amber-100">
+            <span class="text-[11px] font-semibold text-amber-700 uppercase tracking-wider block">Belum Dibagi (Sisa)</span>
+            <span id="statUnassignedItems" class="text-xl font-extrabold text-amber-600">0</span>
+          </div>
+          <div class="p-3 bg-emerald-50/60 rounded-xl border border-emerald-100">
+            <span class="text-[11px] font-semibold text-emerald-700 uppercase tracking-wider block">Sudah Dibagi</span>
+            <span id="statAssignedItems" class="text-xl font-extrabold text-emerald-600">0</span>
+          </div>
+          <div class="p-3 bg-blue-50/60 rounded-xl border border-blue-100">
+            <span class="text-[11px] font-semibold text-blue-700 uppercase tracking-wider block">Sheet Dibuat</span>
+            <span id="statTotalSheets" class="text-xl font-extrabold text-blue-600">0</span>
+          </div>
+        </div>
+
+        <div class="flex flex-wrap items-center gap-2.5">
+          <button id="btnExportExcel" class="w-full sm:w-auto px-5 py-3 rounded-xl bg-emerald-600 hover:bg-emerald-700 active:bg-emerald-800 text-white font-bold text-xs flex items-center justify-center gap-2.5 shadow-md shadow-emerald-500/20 transition">
+            <i class="fa-solid fa-file-excel text-base"></i>
+            <span>Download File Excel Hasil Bagi</span>
+          </button>
+          <button id="btnExportPDF" class="w-full sm:w-auto px-5 py-3 rounded-xl bg-rose-600 hover:bg-rose-700 active:bg-rose-800 text-white font-bold text-xs flex items-center justify-center gap-2.5 shadow-md shadow-rose-500/20 transition">
+            <i class="fa-solid fa-file-pdf text-base"></i>
+            <span>Download PDF (Portrait)</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Category & Brand Filter Section -->
+      <div class="bg-white rounded-2xl p-5 border border-slate-200 shadow-sm space-y-4">
+        <div class="flex items-center justify-between border-b border-slate-100 pb-3">
+          <div>
+            <h2 class="text-sm font-bold text-slate-800 flex items-center gap-2">
+              <i class="fa-solid fa-tags text-blue-600"></i> Kategori & Merk Resmi
+            </h2>
+            <p class="text-xs text-slate-500">Klik merk untuk menyaring barang. Badge akan berubah merah saat sudah dipindahkan ke sheet.</p>
+          </div>
+          <span id="catMovedCounter" class="text-xs font-semibold px-2.5 py-1 rounded-full bg-slate-100 text-slate-600">0 / 39 Dipindahkan</span>
+        </div>
+
+        <!-- Dynamic Brand Chips -->
+        <div id="brandChipsContainer" class="flex flex-wrap gap-2 pt-1">
+          <!-- Populated by JavaScript -->
+        </div>
+
+        <!-- Filter Action Panel -->
+        <div class="grid grid-cols-1 md:grid-cols-12 gap-3 pt-2">
+          <div class="md:col-span-4 relative">
+            <input type="text" id="inputFilterKeyword" placeholder="Cari nama barang atau klik merk di atas..." class="w-full pl-9 pr-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:ring-2 focus:ring-blue-500 focus:bg-white focus:outline-none transition">
+            <i class="fa-solid fa-magnifying-glass absolute left-3 top-2.5 text-slate-400 text-xs"></i>
+          </div>
+
+          <div class="md:col-span-3">
+            <input type="text" id="inputNewSheetName" placeholder="Nama sheet baru..." class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:ring-2 focus:ring-blue-500 focus:bg-white focus:outline-none transition">
+          </div>
+
+          <div class="md:col-span-5 flex flex-wrap gap-2">
+            <button id="btnCreateFilteredSheet" class="flex-1 px-3 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 active:bg-blue-800 text-white font-semibold text-xs flex items-center justify-center gap-1.5 transition shadow-sm">
+              <i class="fa-solid fa-layer-group"></i>
+              <span>Pindahkan ke Sheet Baru</span>
+            </button>
+
+            <!-- Direct Append to Existing Sheet Dropdown -->
+            <div class="flex items-center gap-1.5">
+              <select id="selectTargetExistingSheet" class="max-w-[140px] px-2 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:ring-2 focus:ring-blue-500 focus:outline-none">
+                <option value="">Pilih Sheet...</option>
+              </select>
+              <button id="btnAppendToExistingSheet" class="px-3 py-2 rounded-xl bg-slate-800 hover:bg-slate-900 text-white font-semibold text-xs flex items-center gap-1 transition shadow-sm" title="Tambahkan hasil filter ke sheet yang dipilih">
+                <i class="fa-solid fa-plus"></i>
+                <span>Masukkan</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Auto Split for 10 - 13 People Section -->
+      <div class="bg-gradient-to-br from-indigo-50/70 via-white to-blue-50/60 rounded-2xl p-5 border border-indigo-100 shadow-sm">
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div>
+            <h2 class="text-sm font-bold text-slate-800 flex items-center gap-2">
+              <i class="fa-solid fa-users text-indigo-600"></i> Pembagian Otomatis untuk 10 - 13 Petugas
+            </h2>
+            <p class="text-xs text-slate-500">Membagi sisa barang secara merata ke dalam sheet petugas stok opname</p>
+          </div>
+
+          <div class="flex items-center gap-3">
+            <div class="flex items-center gap-2 bg-white px-3 py-1.5 rounded-xl border border-indigo-200 shadow-2xs">
+              <span class="text-xs font-semibold text-slate-600">Jumlah Orang:</span>
+              <span id="labelStaffCount" class="font-black text-indigo-700 text-sm">12</span>
+              <input type="range" id="rangeStaffCount" min="10" max="13" value="12" class="w-20 accent-indigo-600 cursor-pointer">
+            </div>
+
+            <button id="btnAutoSplitStaff" class="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 active:bg-indigo-800 text-white font-bold text-xs rounded-xl flex items-center gap-2 transition shadow-sm">
+              <i class="fa-solid fa-wand-magic-sparkles"></i>
+              <span>Bagi Rata Otomatis</span>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- List of Created Sheets Ready for Export -->
+      <div class="bg-white rounded-2xl p-5 border border-slate-200 shadow-sm space-y-4">
+        <div class="flex items-center justify-between border-b border-slate-100 pb-3">
+          <div class="flex items-center gap-2">
+            <div class="w-7 h-7 rounded-lg bg-emerald-100 text-emerald-700 flex items-center justify-center text-xs font-bold">
+              <i class="fa-solid fa-list-check"></i>
+            </div>
+            <div>
+              <h2 class="text-sm font-bold text-slate-800">Daftar Sheet Baru Siap Export</h2>
+              <p class="text-xs text-slate-500">Setiap sheet akan menjadi 1 tab terpisah di file Excel yang didownload</p>
+            </div>
+          </div>
+          <button id="btnClearAllSheets" class="text-xs text-red-600 hover:text-red-700 font-semibold flex items-center gap-1 hover:underline">
+            <i class="fa-regular fa-trash-can"></i> Hapus Semua Sheet
+          </button>
+        </div>
+
+        <div id="createdSheetsGrid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+          <!-- Dynamic Sheet Cards -->
+        </div>
+      </div>
+
+      <!-- Preview Data Tables (Tabs: Belum Dibagi vs Sudah Dibagi) -->
+      <div class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+        
+        <!-- Table Top Bar & Tabs -->
+        <div class="p-4 border-b border-slate-100 bg-slate-50/70 flex flex-col md:flex-row md:items-center justify-between gap-3">
+          <div class="flex items-center gap-2">
+            <!-- Tab Belum Dibagi -->
+            <button id="tabTableUnassigned" class="px-3.5 py-2 rounded-xl font-bold text-xs bg-white text-blue-700 border border-slate-200 shadow-2xs flex items-center gap-2 transition">
+              <i class="fa-solid fa-clock-rotate-left text-amber-500"></i>
+              <span>Barang Belum Dibagi</span>
+              <span id="badgeTabUnassigned" class="bg-amber-100 text-amber-800 px-2 py-0.5 rounded-full text-[10px] font-mono">0</span>
+            </button>
+
+            <!-- Tab Sudah Dibagi -->
+            <button id="tabTableAssigned" class="px-3.5 py-2 rounded-xl font-medium text-xs text-slate-600 hover:bg-white hover:text-slate-900 border border-transparent hover:border-slate-200 transition flex items-center gap-2">
+              <i class="fa-solid fa-circle-check text-emerald-500"></i>
+              <span>Barang Sudah Dibagi</span>
+              <span id="badgeTabAssigned" class="bg-emerald-100 text-emerald-800 px-2 py-0.5 rounded-full text-[10px] font-mono">0</span>
+            </button>
+          </div>
+
+          <div class="flex items-center gap-2">
+            <button id="btnReturnSelected" class="hidden px-3.5 py-1.5 rounded-xl font-bold text-xs bg-red-50 text-red-600 border border-red-200 hover:bg-red-100 shadow-2xs items-center gap-1.5 transition">
+              <i class="fa-solid fa-rotate-left"></i> Batalkan (<span id="countReturnSelected">0</span>)
+            </button>
+            <div id="filterSheetWrapper" class="hidden">
+              <select id="selectFilterSheetAssigned" class="px-2.5 py-1.5 bg-white border border-slate-200 rounded-xl text-xs focus:ring-2 focus:ring-blue-500 focus:outline-none">
+                <option value="">Semua Sheet</option>
+              </select>
+            </div>
+            <div class="relative">
+              <input type="text" id="inputTableSearch" placeholder="Cari di tabel..." class="w-48 sm:w-64 pl-8 pr-3 py-1.5 bg-white border border-slate-200 rounded-xl text-xs focus:ring-2 focus:ring-blue-500 focus:outline-none">
+              <i class="fa-solid fa-magnifying-glass absolute left-2.5 top-2 text-slate-400 text-xs"></i>
+            </div>
+          </div>
+        </div>
+
+        <!-- Container 1: Table Belum Dibagi (Sisa) -->
+        <div id="containerUnassignedTable" class="overflow-x-auto custom-scrollbar">
+          <table class="w-full text-left text-xs">
+            <thead class="bg-[#D9E1F2] text-slate-800 uppercase font-bold text-[11px] tracking-wider border-b border-slate-300">
+              <tr>
+                <th class="py-3 px-3 w-12 text-center border-r border-slate-300">#</th>
+                <th class="py-3 px-4 border-r border-slate-300 min-w-[280px]">Nama Barang</th>
+                <th class="py-3 px-3 text-center border-r border-slate-300 w-24">DISPLAY</th>
+                <th class="py-3 px-3 text-center border-r border-slate-300 w-24">ASD TK SRG</th>
+                <th class="py-3 px-3 text-center border-r border-slate-300 w-24">TOKO SRG</th>
+                <th class="py-3 px-3 text-center border-r border-slate-300 w-32">Total Nama Gudang</th>
+                <th class="py-3 px-3 text-center border-r border-slate-300 w-24">CEK 1</th>
+                <th class="py-3 px-3 text-center w-28">CEK 2</th>
+              </tr>
+            </thead>
+            <tbody id="unassignedTableBody" class="divide-y divide-slate-200 font-medium">
+              <!-- Populated by JS -->
+            </tbody>
+          </table>
+        </div>
+
+        <!-- Container 2: Table Sudah Dibagi -->
+        <div id="containerAssignedTable" class="hidden overflow-x-auto custom-scrollbar">
+          <table class="w-full text-left text-xs">
+            <thead class="bg-emerald-100 text-emerald-950 uppercase font-bold text-[11px] tracking-wider border-b border-emerald-300">
+              <tr>
+                <th class="py-3 px-2 w-10 text-center border-r border-emerald-200">
+                  <input type="checkbox" id="chkSelectAllAssigned" class="rounded text-emerald-600 focus:ring-emerald-500 w-3.5 h-3.5 border-emerald-300 cursor-pointer" title="Pilih Semua">
+                </th>
+                <th class="py-3 px-3 w-12 text-center border-r border-emerald-200">#</th>
+                <th class="py-3 px-4 border-r border-emerald-200 min-w-[240px]">Nama Barang</th>
+                <th class="py-3 px-3 text-center border-r border-emerald-200 w-32">Sheet Tujuan</th>
+                <th class="py-3 px-3 text-center border-r border-emerald-200 w-20">DISPLAY</th>
+                <th class="py-3 px-3 text-center border-r border-emerald-200 w-24">ASD TK SRG</th>
+                <th class="py-3 px-3 text-center border-r border-emerald-200 w-24">TOKO SRG</th>
+                <th class="py-3 px-3 text-center border-r border-emerald-200 w-28">Total Gudang</th>
+                <th class="py-3 px-3 text-center w-20">Aksi</th>
+              </tr>
+            </thead>
+            <tbody id="assignedTableBody" class="divide-y divide-slate-200 font-medium">
+              <!-- Populated by JS -->
+            </tbody>
+          </table>
+        </div>
+
+        <div id="tableEmptyState" class="hidden p-8 text-center text-slate-400 text-xs">
+          <i class="fa-solid fa-folder-open text-2xl mb-2 text-slate-300 block"></i>
+          Tidak ada data barang yang cocok dengan pencarian atau filter saat ini.
+        </div>
+      </div>
+
+    </div>
+  </main>
+
+  <!-- Modal Tambah Data ke Sheet -->
+  <div id="modalAddData" class="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4 hidden">
+    <div class="bg-white rounded-2xl max-w-2xl w-full max-h-[90vh] flex flex-col shadow-2xl border border-slate-200 overflow-hidden animate-in fade-in zoom-in-95 duration-150">
+      
+      <!-- Modal Header -->
+      <div class="p-4 border-b border-slate-100 flex items-center justify-between bg-slate-50">
+        <div>
+          <h3 class="font-bold text-slate-800 text-sm flex items-center gap-2">
+            <i class="fa-solid fa-folder-plus text-blue-600"></i> Tambah Data ke Sheet
+          </h3>
+          <p id="modalSheetTargetTitle" class="text-xs text-blue-700 font-semibold mt-0.5">Target Sheet: -</p>
+        </div>
+        <button id="btnModalClose" class="w-8 h-8 rounded-lg hover:bg-slate-200 text-slate-500 flex items-center justify-center transition">
+          <i class="fa-solid fa-xmark"></i>
+        </button>
+      </div>
+
+      <!-- Modal Body Filters -->
+      <div class="p-4 border-b border-slate-100 bg-white space-y-3">
+        <div class="relative">
+          <input type="text" id="modalSearchInput" placeholder="Cari nama barang yang ingin ditambahkan..." class="w-full pl-9 pr-4 py-2 bg-slate-50 border border-slate-300 rounded-xl text-xs focus:ring-2 focus:ring-blue-500 focus:bg-white focus:outline-none transition">
+          <i class="fa-solid fa-magnifying-glass absolute left-3 top-2.5 text-slate-400 text-xs"></i>
+        </div>
+
+        <!-- Section: Kategori Belum Dipindahkan -->
+        <div class="space-y-1.5 bg-slate-50/80 p-2.5 rounded-xl border border-slate-200">
+          <div class="flex items-center justify-between">
+            <span class="text-[11px] font-bold text-slate-700 uppercase tracking-wider flex items-center gap-1.5">
+              <i class="fa-solid fa-tags text-blue-600"></i> Kategori Belum Dipindahkan:
+            </span>
+            <span id="modalUnmovedCatCount" class="text-[10px] text-slate-500 font-semibold">0 Kategori</span>
+          </div>
+          <div id="modalUnmovedCategoriesList" class="flex flex-wrap gap-1.5 max-h-24 overflow-y-auto custom-scrollbar pr-1">
+            <!-- Dynamic Category Chips -->
+          </div>
+        </div>
+
+        <!-- Checklist Controls -->
+        <div class="flex items-center justify-between text-xs pt-1">
+          <div class="flex items-center gap-2">
+            <button id="btnModalFilterUnassigned" class="px-2.5 py-1 rounded-lg font-semibold bg-amber-100 text-amber-900 border border-amber-200 text-[11px]">Hanya Belum Terbagi</button>
+            <button id="btnModalFilterAll" class="px-2.5 py-1 rounded-lg font-medium text-slate-600 hover:bg-slate-100 text-[11px]">Semua Barang</button>
+          </div>
+          <label class="flex items-center gap-1.5 cursor-pointer text-slate-700 text-[11px] font-medium select-none">
+            <input type="checkbox" id="chkModalSelectAll" class="rounded text-blue-600 focus:ring-blue-500 w-3.5 h-3.5 border-slate-300">
+            <span>Pilih Semua yang Tampil</span>
+          </label>
+        </div>
+      </div>
+
+      <!-- Item Checklist Container -->
+      <div id="modalItemList" class="flex-1 overflow-y-auto p-3 space-y-1.5 custom-scrollbar max-h-80 bg-slate-50/30">
+        <!-- Checklist items populated dynamically -->
+      </div>
+
+      <!-- Modal Footer -->
+      <div class="p-3.5 border-t border-slate-100 bg-slate-50 flex items-center justify-between">
+        <span id="modalSelectedCounter" class="text-xs font-semibold text-slate-600">0 barang dipilih</span>
+        <div class="flex items-center gap-2">
+          <button id="btnModalCancel" class="px-3.5 py-1.5 rounded-xl border border-slate-300 text-slate-700 text-xs font-semibold hover:bg-slate-100 transition">Batal</button>
+          <button id="btnModalConfirm" class="px-4 py-1.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold transition shadow-sm">Tambahkan ke Sheet</button>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- Modal Konfirmasi Download (Tampilkan Angka atau Sembunyikan Angka) -->
+  <div id="modalDownloadConfirm" class="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4 hidden">
+    <div class="bg-white rounded-3xl max-w-md w-full p-6 shadow-2xl border border-slate-200 animate-in fade-in zoom-in-95 duration-150 space-y-5 text-center">
+      
+      <div id="modalExportIcon" class="w-14 h-14 rounded-2xl bg-blue-100 text-blue-600 mx-auto flex items-center justify-center text-2xl shadow-sm">
+        <i id="modalExportIconClass" class="fa-solid fa-file-excel"></i>
+      </div>
+
+      <div>
+        <h3 id="modalExportTitle" class="text-lg font-bold text-slate-800">Opsi Ekspor File Excel</h3>
+        <p id="modalExportDesc" class="text-xs text-slate-500 mt-1.5 leading-relaxed">
+          Apakah Anda ingin menampilkan angka kuantitas stok sistem pada file Excel yang didownload?
+        </p>
+      </div>
+
+      <div class="space-y-2.5 text-left">
+        <button id="btnDownloadWithNumbers" class="w-full p-3.5 rounded-2xl border-2 border-emerald-500/80 bg-emerald-50/60 hover:bg-emerald-100/80 transition flex items-center gap-3.5 group cursor-pointer">
+          <div class="w-10 h-10 rounded-xl bg-emerald-600 text-white flex items-center justify-center shrink-0 shadow-sm group-hover:scale-105 transition">
+            <i class="fa-solid fa-eye text-base"></i>
+          </div>
+          <div class="flex-1">
+            <div class="font-bold text-emerald-900 text-xs">Ya, Tampilkan Angka</div>
+            <div class="text-[11px] text-emerald-700">Angka kuantitas terlihat jelas (font hitam standar).</div>
+          </div>
+        </button>
+
+        <button id="btnDownloadWithoutNumbers" class="w-full p-3.5 rounded-2xl border-2 border-blue-500/80 bg-blue-50/60 hover:bg-blue-100/80 transition flex items-center gap-3.5 group cursor-pointer">
+          <div class="w-10 h-10 rounded-xl bg-blue-600 text-white flex items-center justify-center shrink-0 shadow-sm group-hover:scale-105 transition">
+            <i class="fa-solid fa-eye-slash text-base"></i>
+          </div>
+          <div class="flex-1">
+            <div class="font-bold text-blue-900 text-xs">Tidak (Sembunyikan Angka)</div>
+            <div class="text-[11px] text-blue-700">Warna font diubah putih agar tidak terlihat (Blind Opname).</div>
+          </div>
+        </button>
+      </div>
+
+      <div class="pt-2">
+        <button id="btnDownloadCancel" class="w-full py-2.5 rounded-xl border border-slate-200 text-slate-600 hover:bg-slate-100 text-xs font-semibold transition cursor-pointer">
+          Batal
+        </button>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- Toast Notification Box -->
+  <div id="toastBox" class="fixed bottom-5 right-5 z-50 flex flex-col gap-2 max-w-sm pointer-events-none"></div>
+
+  <script>
+    // App State
+    const state = {
+      rawRows: [],
+      items: [],
+      newSheets: [],
+      cek1Inputs: {} // { itemId: value }
+    };
+
+    // Tracking categories strictly moved
+    const movedCategories = new Set();
+    let currentSelectedCategoryId = null;
+
+    // Strict 30 Specific Categories
+    const SPECIFIC_CATEGORIES = [
+      { id: 'cat-sharp', label: 'SHARP', query: 'SHARP', match: (n) => n.toUpperCase().includes('SHARP') },
+      { id: 'cat-samsung', label: 'SAMSUNG', query: 'SAMSUNG', match: (n) => n.toUpperCase().includes('SAMSUNG') },
+      { id: 'cat-panasonic', label: 'PANASONIC', query: 'PANASONIC', match: (n) => n.toUpperCase().includes('PANASONIC') },
+      { id: 'cat-coocaa', label: 'COOCAA', query: 'COOCAA', match: (n) => n.toUpperCase().includes('COOCAA') },
+      { id: 'cat-midea', label: 'MIDEA', query: 'MIDEA', match: (n) => n.toUpperCase().includes('MIDEA') },
+      { id: 'cat-aqua', label: 'AQUA', query: 'AQUA', match: (n) => n.toUpperCase().includes('AQUA') },
+      { id: 'cat-polytron', label: 'POLYTRON', query: 'POLYTRON', match: (n) => n.toUpperCase().includes('POLYTRON') },
+      { id: 'cat-artugo', label: 'ARTUGO', query: 'ARTUGO', match: (n) => n.toUpperCase().includes('ARTUGO') },
+      { id: 'cat-lg', label: 'LG', query: 'LG', match: (n) => /\bLG\b/i.test(n) || n.toUpperCase().includes(' LG ') || n.toUpperCase().startsWith('LG ') },
+      { id: 'cat-tcl', label: 'TCL', query: 'TCL', match: (n) => n.toUpperCase().includes('TCL') },
+      {
+        id: 'cat-gea',
+        label: 'GEA / RSA / GETRA',
+        query: 'GEA',
+        match: (n) => {
+          const u = n.toUpperCase();
+          return /\bGEA\b/i.test(u) || u.includes(' GEA ') || u.startsWith('GEA ') ||
+                 /\bRSA\b/i.test(u) || u.includes(' RSA ') || u.startsWith('RSA ') ||
+                 /\bGETRA\b/i.test(u) || u.includes('GETRA');
+        }
+      },
+      {
+        id: 'cat-gree',
+        label: 'GREE / FLIFE',
+        query: 'GREE ',
+        match: (n) => {
+          const u = n.toUpperCase();
+          return u.includes('GREE ') || /\bFLIFE\b/i.test(u) || u.includes('FLIFE');
+        }
+      },
+      { id: 'cat-modena', label: 'MODENA', query: 'MODENA', match: (n) => n.toUpperCase().includes('MODENA') },
+      { id: 'cat-electrolux', label: 'ELECTROLUX', query: 'ELECTROLUX', match: (n) => n.toUpperCase().includes('ELECTROLUX') },
+      { id: 'cat-ariston', label: 'ARISTON', query: 'ARISTON', match: (n) => n.toUpperCase().includes('ARISTON') },
+      { id: 'cat-daikin', label: 'DAIKIN', query: 'DAIKIN', match: (n) => n.toUpperCase().includes('DAIKIN') },
+      { id: 'cat-hisense', label: 'HISENSE', query: 'HISENSE', match: (n) => n.toUpperCase().includes('HISENSE') },
+      { id: 'cat-toshiba', label: 'TOSHIBA', query: 'TOSHIBA', match: (n) => n.toUpperCase().includes('TOSHIBA') },
+      { id: 'cat-rinnai', label: 'RINNAI', query: 'RINNAI', match: (n) => n.toUpperCase().includes('RINNAI') },
+      { id: 'cat-philips', label: 'PHILIPS', query: 'PHILIPS', match: (n) => n.toUpperCase().includes('PHILIPS') },
+      { id: 'cat-advance', label: 'ADVANCE', query: 'ADVANCE', match: (n) => n.toUpperCase().includes('ADVANCE') },
+      { id: 'cat-cosmos', label: 'COSMOS', query: 'COSMOS', match: (n) => n.toUpperCase().includes('COSMOS') },
+      { id: 'cat-miyako', label: 'MIYAKO', query: 'MIYAKO', match: (n) => n.toUpperCase().includes('MIYAKO') },
+      { id: 'cat-kipas', label: 'KIPAS / FAN', query: 'KIPAS', match: (n) => n.toUpperCase().includes('KIPAS') || n.toUpperCase().includes('FAN') },
+      { id: 'cat-magiccom', label: 'MAGIC COM', query: 'MAGIC COM', match: (n) => {
+        const u = n.toUpperCase();
+        return u.includes('MAGICOM') || u.includes('MAGICCOM') || u.includes('MAGIC JAR') || u.includes('RICE COOKER') || u.includes('MAGIC COM');
+      }},
+      { id: 'cat-blender', label: 'BLENDER', query: 'BLENDER', match: (n) => n.toUpperCase().includes('BLENDER') },
+      { id: 'cat-mixer', label: 'MIXER', query: 'MIXER', match: (n) => n.toUpperCase().includes('MIXER') },
+      { id: 'cat-chopper', label: 'CHOPPER', query: 'CHOPPER', match: (n) => n.toUpperCase().includes('CHOPPER') },
+      { id: 'cat-pan', label: 'PAN', query: 'PAN', match: (n) => {
+        const u = n.toUpperCase();
+        return (/\bPAN\b/i.test(u) || u.includes('FRY PAN') || u.includes('SAUCE PAN') || u.includes('GRILL PAN') || u.includes('WOOKPAN') || u.includes('WOOK PAN') || u.includes('WOKPAN') || u.includes('WOK PAN') || /\bWOK\b/i.test(u)) && !u.includes('PANASONIC') && !u.includes('PANEL');
+      }},
+      { id: 'cat-kompor', label: 'KOMPOR', query: 'KOMPOR', match: (n) => n.toUpperCase().includes('KOMPOR') || n.toUpperCase().includes('STOVE') },
+      { id: 'cat-mop', label: 'MOP', query: 'MOP', match: (n) => /\bMOP\b/i.test(n) || n.toUpperCase().includes('SPIN MOP') },
+      { id: 'cat-setrika', label: 'SETRIKA', query: 'SETRIKA', match: (n) => n.toUpperCase().includes('SETRIKA') || n.toUpperCase().includes('IRON') },
+      { id: 'cat-dispenser', label: 'DISPENSER', query: 'DISPENSER', match: (n) => n.toUpperCase().includes('DISPENSER') },
+      { id: 'cat-airfryer', label: 'AIR FRYER', query: 'AIR FRYER', match: (n) => {
+        const u = n.toUpperCase();
+        return u.includes('AIR FRYER') || u.includes('AIRFRYER');
+      }},
+      { id: 'cat-antena', label: 'ANTENA', query: 'ANTENA', match: (n) => {
+        const u = n.toUpperCase();
+        return u.includes('ANTENA') || u.includes('ANTENNA');
+      }},
+      { id: 'cat-bracket', label: 'BRACKET', query: 'BRACKET', match: (n) => {
+        const u = n.toUpperCase();
+        return u.includes('BRACKET') || u.includes('BREKET');
+      }},
+      { id: 'cat-cookerhood', label: 'COOKER HOOD', query: 'COOKER HOOD', match: (n) => {
+        const u = n.toUpperCase();
+        return u.includes('COOKER HOOD') || u.includes('COOKERHOOD') || u.includes('EXHAUST HOOD') || /\bHOOD\b/i.test(u);
+      }},
+      { id: 'cat-vacuum', label: 'VACUUM', query: 'VACUUM', match: (n) => {
+        const u = n.toUpperCase();
+        return u.includes('VACUUM') || u.includes('VAKUM');
+      }}
+    ];
+
+    // Complete Defined Categories (Specific + LAIN-LAIN)
+    const DEFINED_CATEGORIES = [
+      ...SPECIFIC_CATEGORIES,
+      {
+        id: 'cat-lain',
+        label: 'LAIN-LAIN',
+        query: 'LAIN-LAIN',
+        match: (n) => !SPECIFIC_CATEGORIES.some(cat => cat.match(n))
+      }
+    ];
+
+    // DOM Elements
+    const uploadSection = document.getElementById('uploadSection');
+    const workspaceSection = document.getElementById('workspaceSection');
+    const dropZone = document.getElementById('dropZone');
+    const fileInput = document.getElementById('fileInput');
+    const btnLoadSample = document.getElementById('btnLoadSample');
+    const btnResetAll = document.getElementById('btnResetAll');
+    const btnExportExcel = document.getElementById('btnExportExcel');
+    const btnExportPDF = document.getElementById('btnExportPDF');
+    const btnUndo = document.getElementById('btnUndo');
+
+    // Stats
+    const statTotalItems = document.getElementById('statTotalItems');
+    const statUnassignedItems = document.getElementById('statUnassignedItems');
+    const statAssignedItems = document.getElementById('statAssignedItems');
+    const statTotalSheets = document.getElementById('statTotalSheets');
+
+    // Brand Chips & Filters
+    const brandChipsContainer = document.getElementById('brandChipsContainer');
+    const catMovedCounter = document.getElementById('catMovedCounter');
+    const inputFilterKeyword = document.getElementById('inputFilterKeyword');
+    const inputNewSheetName = document.getElementById('inputNewSheetName');
+    const btnCreateFilteredSheet = document.getElementById('btnCreateFilteredSheet');
+    const selectTargetExistingSheet = document.getElementById('selectTargetExistingSheet');
+    const btnAppendToExistingSheet = document.getElementById('btnAppendToExistingSheet');
+
+    // Auto Split
+    const rangeStaffCount = document.getElementById('rangeStaffCount');
+    const labelStaffCount = document.getElementById('labelStaffCount');
+    const btnAutoSplitStaff = document.getElementById('btnAutoSplitStaff');
+
+    // Created Sheets Grid
+    const createdSheetsGrid = document.getElementById('createdSheetsGrid');
+    const btnClearAllSheets = document.getElementById('btnClearAllSheets');
+
+    // Tables & Tabs
+    const tabTableUnassigned = document.getElementById('tabTableUnassigned');
+    const tabTableAssigned = document.getElementById('tabTableAssigned');
+    const badgeTabUnassigned = document.getElementById('badgeTabUnassigned');
+    const badgeTabAssigned = document.getElementById('badgeTabAssigned');
+    const containerUnassignedTable = document.getElementById('containerUnassignedTable');
+    const containerAssignedTable = document.getElementById('containerAssignedTable');
+    const unassignedTableBody = document.getElementById('unassignedTableBody');
+    const assignedTableBody = document.getElementById('assignedTableBody');
+    const tableEmptyState = document.getElementById('tableEmptyState');
+    const inputTableSearch = document.getElementById('inputTableSearch');
+    const filterSheetWrapper = document.getElementById('filterSheetWrapper');
+    const selectFilterSheetAssigned = document.getElementById('selectFilterSheetAssigned');
+
+    // Added for Batch Return
+    const btnReturnSelected = document.getElementById('btnReturnSelected');
+    const countReturnSelected = document.getElementById('countReturnSelected');
+    const chkSelectAllAssigned = document.getElementById('chkSelectAllAssigned');
+    
+    let selectedAssignedIds = new Set();
+    let currentDisplayedAssignedList = [];
+
+    // Modal Add Data
+    const modalAddData = document.getElementById('modalAddData');
+    const modalSheetTargetTitle = document.getElementById('modalSheetTargetTitle');
+    const btnModalClose = document.getElementById('btnModalClose');
+    const btnModalCancel = document.getElementById('btnModalCancel');
+    const btnModalConfirm = document.getElementById('btnModalConfirm');
+    const modalSearchInput = document.getElementById('modalSearchInput');
+    const modalItemList = document.getElementById('modalItemList');
+    const chkModalSelectAll = document.getElementById('chkModalSelectAll');
+    const modalSelectedCounter = document.getElementById('modalSelectedCounter');
+    const btnModalFilterUnassigned = document.getElementById('btnModalFilterUnassigned');
+    const btnModalFilterAll = document.getElementById('btnModalFilterAll');
+    const modalUnmovedCategoriesList = document.getElementById('modalUnmovedCategoriesList');
+    const modalUnmovedCatCount = document.getElementById('modalUnmovedCatCount');
+
+    const modalDownloadConfirm = document.getElementById('modalDownloadConfirm');
+    const modalExportIcon = document.getElementById('modalExportIcon');
+    const modalExportIconClass = document.getElementById('modalExportIconClass');
+    const modalExportTitle = document.getElementById('modalExportTitle');
+    const modalExportDesc = document.getElementById('modalExportDesc');
+    const btnDownloadWithNumbers = document.getElementById('btnDownloadWithNumbers');
+    const btnDownloadWithoutNumbers = document.getElementById('btnDownloadWithoutNumbers');
+    const btnDownloadCancel = document.getElementById('btnDownloadCancel');
+
+    let currentExportFormat = 'excel'; // 'excel' | 'pdf'
+
+    // Modal state
+    let activeModalSheetId = null;
+    let modalSelectedIds = new Set();
+    let modalFilterMode = 'unassigned';
+    let activeModalCategory = null;
+    let currentActiveTab = 'unassigned'; // 'unassigned' | 'assigned'
+
+    // History stack for Undo
+    const historyStack = [];
+
+    function saveState(actionName = '') {
+      const snapshot = {
+        actionName,
+        newSheets: JSON.parse(JSON.stringify(state.newSheets)),
+        movedCategories: Array.from(movedCategories),
+        currentSelectedCategoryId: currentSelectedCategoryId,
+        cek1Inputs: { ...state.cek1Inputs }
+      };
+      historyStack.push(snapshot);
+      if (historyStack.length > 30) historyStack.shift(); // Simpan hingga 30 aksi terakhir
+      updateUndoButton();
+    }
+
+    function undo() {
+      if (historyStack.length === 0) return;
+      const previous = historyStack.pop();
+      state.newSheets = previous.newSheets;
+      movedCategories.clear();
+      previous.movedCategories.forEach(id => movedCategories.add(id));
+      currentSelectedCategoryId = previous.currentSelectedCategoryId;
+      state.cek1Inputs = previous.cek1Inputs || {};
+
+      selectedAssignedIds.clear(); // Clear selections on undo
+
+      renderBrandChips();
+      renderCreatedSheets();
+      renderTables();
+      updateStats();
+      updateUndoButton();
+      updateReturnSelectedButton();
+
+      showToast('Undo Berhasil', previous.actionName ? `Aksi "${previous.actionName}" telah dibatalkan.` : 'Aksi terakhir dibatalkan.', 'info');
+    }
+
+    function updateUndoButton() {
+      if (!btnUndo) return;
+      btnUndo.disabled = historyStack.length === 0;
+      if (historyStack.length > 0) {
+        btnUndo.classList.remove('opacity-40', 'cursor-not-allowed');
+        btnUndo.title = `Undo: ${historyStack[historyStack.length - 1].actionName || 'Aksi terakhir'} (Ctrl+Z)`;
+      } else {
+        btnUndo.classList.add('opacity-40', 'cursor-not-allowed');
+        btnUndo.title = 'Tidak ada aksi yang bisa dibatalkan';
+      }
+    }
+
+    btnUndo.addEventListener('click', undo);
+
+    // Keyboard shortcut Ctrl+Z / Cmd+Z
+    window.addEventListener('keydown', (e) => {
+      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'z') {
+        if (['INPUT', 'TEXTAREA'].includes(document.activeElement?.tagName)) return;
+        e.preventDefault();
+        undo();
+      }
+    });
+
+    function showToast(title, message, type = 'info') {
+      const toastBox = document.getElementById('toastBox');
+      const toast = document.createElement('div');
+      const colors = {
+        success: 'bg-emerald-600 text-white',
+        error: 'bg-rose-600 text-white',
+        info: 'bg-slate-800 text-white'
+      };
+      const icons = {
+        success: 'fa-circle-check',
+        error: 'fa-circle-exclamation',
+        info: 'fa-circle-info'
+      };
+
+      toast.className = `${colors[type] || colors.info} pointer-events-auto px-4 py-3 rounded-2xl shadow-xl flex items-center gap-3 text-xs transition-all duration-300 transform translate-y-2 opacity-0`;
+      toast.innerHTML = `
+        <i class="fa-solid ${icons[type] || icons.info} text-base"></i>
+        <div>
+          <p class="font-bold">${escapeHtml(title)}</p>
+          <p class="opacity-90">${escapeHtml(message)}</p>
+        </div>
+      `;
+
+      toastBox.appendChild(toast);
+      requestAnimationFrame(() => {
+        toast.classList.remove('translate-y-2', 'opacity-0');
+      });
+
+      setTimeout(() => {
+        toast.classList.add('opacity-0', 'translate-y-2');
+        setTimeout(() => toast.remove(), 300);
+      }, 3500);
+    }
+
+    function escapeHtml(str) {
+      if (str === null || str === undefined) return '';
+      return String(str)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;');
+    }
+
+    function cleanSheetName(name) {
+      if (!name) return 'Sheet';
+      let cleaned = name.replace(/[\\/?*\[\]:]/g, ' ').replace(/\s+/g, ' ').trim();
+      if (cleaned.length > 31) cleaned = cleaned.substring(0, 31).trim();
+      return cleaned || 'Sheet';
+    }
+
+    function getAssignedItemMap() {
+      const map = new Map();
+      state.newSheets.forEach(sheet => {
+        sheet.items.forEach(it => {
+          map.set(it.id, sheet.name);
+        });
+      });
+      return map;
+    }
+
+    function parseUploadedExcel(file) {
+      const reader = new FileReader();
+      reader.onload = function(e) {
+        try {
+          const data = new Uint8Array(e.target.result);
+          const workbook = XLSX.read(data, { type: 'array' });
+          const firstSheetName = workbook.SheetNames[0];
+          const worksheet = workbook.Sheets[firstSheetName];
+          const jsonRows = XLSX.utils.sheet_to_json(worksheet, { header: 1, defval: '' });
+
+          if (!jsonRows || jsonRows.length === 0) {
+            showToast('File Kosong', 'Tidak ada data yang ditemukan dalam file Excel.', 'error');
+            return;
+          }
+
+          processRawExcelRows(jsonRows);
+        } catch (err) {
+          console.error(err);
+          showToast('Error Membaca File', 'Pastikan file berformat Excel (.xlsx/.xls) yang valid.', 'error');
+        }
+      };
+      reader.readAsArrayBuffer(file);
+    }
+
+    function processRawExcelRows(rows) {
+      let headerRowIndex = -1;
+      let namaBarangColIndex = -1;
+      let asdColIndex = -1;
+      let tokoColIndex = -1;
+      let totalColIndex = -1;
+
+      for (let r = 0; r < Math.min(rows.length, 15); r++) {
+        const row = rows[r];
+        for (let c = 0; c < row.length; c++) {
+          const val = String(row[c]).trim().toUpperCase();
+          if (val === 'NAMA BARANG') {
+            headerRowIndex = r;
+            namaBarangColIndex = c;
+          } else if (val.includes('ASD TK')) {
+            asdColIndex = c;
+          } else if (val.includes('TOKO SRG')) {
+            tokoColIndex = c;
+          } else if (val.includes('TOTAL NAMA GUDANG') || val.includes('TOTAL')) {
+            totalColIndex = c;
+          }
+        }
+        if (namaBarangColIndex !== -1) break;
+      }
+
+      // Default fallback indices if not exact
+      if (headerRowIndex === -1) {
+        headerRowIndex = 4;
+        namaBarangColIndex = 0;
+        asdColIndex = 2;
+        tokoColIndex = 3;
+        totalColIndex = 4;
+      }
+
+      const parsedItems = [];
+      let currentId = 1;
+
+      for (let r = headerRowIndex + 1; r < rows.length; r++) {
+        const row = rows[r];
+        if (!row || row.length === 0) continue;
+        
+        const rawName = row[namaBarangColIndex];
+        if (!rawName || typeof rawName !== 'string' || !rawName.trim()) continue;
+        
+        const itemName = rawName.trim();
+        // Skip grand total rows
+        if (/^(TOTAL|JUMLAH|GRAND TOTAL)/i.test(itemName)) continue;
+
+        const parseNum = (val) => {
+          if (typeof val === 'number') return val;
+          if (!val) return 0;
+          const cleaned = String(val).replace(/,/g, '.').replace(/[^0-9.-]/g, '');
+          const n = parseFloat(cleaned);
+          return isNaN(n) ? 0 : n;
+        };
+
+        const asdVal = asdColIndex !== -1 ? parseNum(row[asdColIndex]) : 0;
+        const tokoVal = tokoColIndex !== -1 ? parseNum(row[tokoColIndex]) : 0;
+        let totalVal = totalColIndex !== -1 ? parseNum(row[totalColIndex]) : (asdVal + tokoVal);
+
+        parsedItems.push({
+          id: `item-${currentId++}`,
+          name: itemName,
+          asd: asdVal,
+          toko: tokoVal,
+          total: totalVal
+        });
+      }
+
+      if (parsedItems.length === 0) {
+        showToast('Peringatan', 'Tidak ditemukan baris barang yang valid dalam file.', 'error');
+        return;
+      }
+
+      state.items = parsedItems;
+      state.newSheets = [];
+      state.cek1Inputs = {};
+      movedCategories.clear();
+      currentSelectedCategoryId = null;
+      historyStack.length = 0;
+
+      showWorkspace();
+      renderBrandChips();
+      renderCreatedSheets();
+      renderTables();
+      updateStats();
+      updateUndoButton();
+
+      showToast('File Berhasil Dibaca', `Memuat ${parsedItems.length} barang kuantitas per gudang.`, 'success');
+    }
+
+    function showWorkspace() {
+      uploadSection.classList.add('hidden');
+      workspaceSection.classList.remove('hidden');
+      btnResetAll.classList.remove('hidden');
+      btnUndo.classList.remove('hidden');
+    }
+
+    function resetToUpload() {
+      state.items = [];
+      state.newSheets = [];
+      state.cek1Inputs = {};
+      movedCategories.clear();
+      currentSelectedCategoryId = null;
+      historyStack.length = 0;
+      fileInput.value = '';
+      selectedAssignedIds.clear();
+
+      workspaceSection.classList.add('hidden');
+      btnResetAll.classList.add('hidden');
+      btnUndo.classList.add('hidden');
+      uploadSection.classList.remove('hidden');
+    }
+
+    btnResetAll.addEventListener('click', resetToUpload);
+
+    // Dropzone Listeners
+    dropZone.addEventListener('dragover', (e) => {
+      e.preventDefault();
+      dropZone.classList.add('border-blue-600', 'bg-blue-100/50');
+    });
+
+    dropZone.addEventListener('dragleave', () => {
+      dropZone.classList.remove('border-blue-600', 'bg-blue-100/50');
+    });
+
+    dropZone.addEventListener('drop', (e) => {
+      e.preventDefault();
+      dropZone.classList.remove('border-blue-600', 'bg-blue-100/50');
+      if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
+        parseUploadedExcel(e.dataTransfer.files[0]);
+      }
+    });
+
+    fileInput.addEventListener('change', (e) => {
+      if (e.target.files && e.target.files.length > 0) {
+        parseUploadedExcel(e.target.files[0]);
+      }
+    });
+
+    btnLoadSample.addEventListener('click', () => {
+      const sampleNames = [
+        "AC AQUA AQA-KCR5FQAL3S", "AC AQUA AQA-KCR12FQAL3", "AC AQUA AQA-KCR5FQDL3S",
+        "AC AQUA AQA-KCR5VQCL2", "AC AQUA AQA-KCR9FQAL3", "AC AQUA AQA-KCR9FQBL2",
+        "AC AQUA AQA-KCR9FQBL3", "AC ARISTON KIOS-5R32MUDO", "AC DAIKIN STKF25AV",
+        "AC FLIFE FAC-05FLOO", "AC FLIFE FAC-12FCOO", "AC GREE GWC-05N1",
+        "AC GREE GWC-09MOO5S", "AC HISENSE AN05CEG", "AC LG T06EV5", "AC MIDEA MSAF-05CRN2",
+        "AC PANASONIC CS-YN5WKJ", "AC POLYTRON PAC-05VH", "AC SAMSUNG AR05TYHYASINSE",
+        "AC SHARP AH-A5BEY", "AC SHARP AH-A9BEY", "AC TOSHIBA RAS-05J2KG",
+        "KIPAS ANGIN COSMOS 16-SDB", "KIPAS ANGIN MIYAKO KAS-1618B", "EXHAUST FAN PANASONIC FV-25RUN5",
+        "MAGIC COM SHARP KS-R18MS", "MAGIC COM COSMOS CRJ-3301", "MAGIC COM MIYAKO MCM-508",
+        "RICE COOKER PHILIPS HD3119", "KULKAS SHARP SJ-X165MG", "KULKAS POLYTRON PRB-159",
+        "MESIN CUCI AQUA QW-781XT", "MESIN CUCI SHARP ES-T65NT", "TV TCL 32A7",
+        "TV COOCAA 32S3U", "DISPENSER GEA HALLEY", "CHEST FREEZER RSA CF-100", "SHOWCASE GETRA EXPO-50",
+        "SPEAKER AKTIF ADVANCE T-101BT", "KOMPOR GAS RINNAI RI-522C",
+        "KOMPOR GAS MODENA BH-0725", "WATER HEATER ARISTON ANDRIS2 RS", "FREEZER ARTUGO CF-101",
+        "MESIN CUCI ELECTROLUX EWF8005EQWA",
+        "BLENDER PHILIPS HR-2115", "STAND MIXER MIYAKO SM-625", "FOOD CHOPPER MITOCHIBA CH-200",
+        "FRY PAN TEFAL EXPERTISE 24CM", "WOOKPAN CYPRUZ MARBLE 28CM", "SPIN MOP BOLDE SUPER MOP M-168X+", "SETRIKA PHILIPS HD-1172",
+        "AIR FRYER PHILIPS HD9200", "ANTENA TV DIGITAL TOYOSAKI AIO-220", "BRACKET TV NORTH BAYOU P4",
+        "COOKER HOOD MODENA SX-6001S", "VACUUM CLEANER DEERMA DX700"
+      ];
+
+      const mockItems = sampleNames.map((name, idx) => ({
+        id: `sample-${idx + 1}`,
+        name: name,
+        asd: 0,
+        toko: 1,
+        total: 1
+      }));
+
+      state.items = mockItems;
+      state.newSheets = [];
+      state.cek1Inputs = {};
+      movedCategories.clear();
+      currentSelectedCategoryId = null;
+      historyStack.length = 0;
+
+      showWorkspace();
+      renderBrandChips();
+      renderCreatedSheets();
+      renderTables();
+      updateStats();
+      updateUndoButton();
+
+      showToast('Data Contoh Dimuat', `${mockItems.length} barang contoh siap dibagi.`, 'success');
+    });
+
+    function renderBrandChips() {
+      brandChipsContainer.innerHTML = '';
+      const assignedMap = getAssignedItemMap();
+      let movedCount = 0;
+
+      DEFINED_CATEGORIES.forEach(cat => {
+        const catItems = state.items.filter(it => cat.match(it.name));
+        const unassignedCatItems = catItems.filter(it => !assignedMap.has(it.id));
+        const isMoved = movedCategories.has(cat.id);
+        const isSelected = !isMoved && currentSelectedCategoryId === cat.id;
+
+        if (isMoved) movedCount++;
+
+        const btn = document.createElement('button');
+        btn.type = 'button';
+
+        if (isMoved) {
+          // Strictly RED badge when moved
+          btn.className = 'px-3 py-1.5 text-xs font-bold bg-rose-600 hover:bg-rose-700 text-white rounded-xl shadow-xs transition flex items-center gap-1.5';
+          btn.innerHTML = `<i class="fa-solid fa-check text-[10px]"></i> <span>${cat.label}</span> <span class="bg-rose-800 text-rose-100 text-[10px] px-1.5 py-0.5 rounded-full font-mono">${catItems.length}</span>`;
+          btn.title = `Kategori ${cat.label} sudah dipindahkan ke sheet`;
+        } else if (isSelected) {
+          // Active / Selected state BEFORE moved (Warna berubah jelas saat diklik)
+          btn.className = 'px-3 py-1.5 text-xs font-bold bg-blue-600 hover:bg-blue-700 text-white rounded-xl shadow-md ring-2 ring-blue-400 ring-offset-1 transition flex items-center gap-1.5 scale-105';
+          btn.innerHTML = `<i class="fa-solid fa-arrow-right-to-bracket text-[10px]"></i> <span>${cat.label}</span> <span class="bg-blue-800 text-blue-100 text-[10px] px-1.5 py-0.5 rounded-full font-mono">${unassignedCatItems.length}</span>`;
+          btn.title = `Kategori ${cat.label} sedang dipilih (${unassignedCatItems.length} belum terbagi)`;
+        } else {
+          // Normal state
+          btn.className = 'px-3 py-1.5 text-xs font-semibold bg-slate-100 hover:bg-blue-100 text-slate-700 hover:text-blue-800 rounded-xl transition flex items-center gap-1.5 border border-slate-200/80';
+          btn.innerHTML = `<span>${cat.label}</span> <span class="bg-white text-slate-500 text-[10px] px-1.5 py-0.5 rounded-full font-mono border border-slate-200">${unassignedCatItems.length}</span>`;
+          btn.title = `Filter & pilih kategori ${cat.label} (${unassignedCatItems.length} belum terbagi)`;
+        }
+
+        btn.addEventListener('click', () => {
+          if (currentSelectedCategoryId === cat.id) {
+            // Klik lagi untuk batalkan pilihan
+            currentSelectedCategoryId = null;
+            inputFilterKeyword.value = '';
+            inputNewSheetName.value = '';
+            inputTableSearch.value = '';
+          } else {
+            currentSelectedCategoryId = cat.id;
+            inputFilterKeyword.value = cat.query;
+            inputNewSheetName.value = cleanSheetName(cat.label);
+          }
+          applyFilterFromChip();
+        });
+
+        brandChipsContainer.appendChild(btn);
+      });
+
+      catMovedCounter.textContent = `${movedCount} / ${DEFINED_CATEGORIES.length} Dipindahkan`;
+    }
+
+    function applyFilterFromChip() {
+      if (currentSelectedCategoryId === 'cat-lain' || currentSelectedCategoryId === 'cat-gea' || currentSelectedCategoryId === 'cat-gree') {
+        inputTableSearch.value = '';
+      } else {
+        inputTableSearch.value = inputFilterKeyword.value.trim();
+      }
+      renderBrandChips();
+      renderTables();
+    }
+
+    inputFilterKeyword.addEventListener('input', () => {
+      // If user clears or types custom, release active chip
+      const val = inputFilterKeyword.value.trim().toUpperCase();
+      const matched = DEFINED_CATEGORIES.find(c => {
+        if (c.id === 'cat-gea') {
+          return val === 'GEA' || val === 'RSA' || val === 'GETRA' || val === 'GEA / RSA / GETRA';
+        }
+        if (c.id === 'cat-gree') {
+          return val === 'GREE' || val === 'FLIFE' || val === 'GREE / FLIFE';
+        }
+        return c.query.trim().toUpperCase() === val || c.label.toUpperCase() === val;
+      });
+      if (matched) {
+        currentSelectedCategoryId = matched.id;
+        if (!inputNewSheetName.value) inputNewSheetName.value = cleanSheetName(matched.label);
+      } else {
+        currentSelectedCategoryId = null;
+      }
+      renderBrandChips();
+      inputTableSearch.value = inputFilterKeyword.value.trim();
+      renderTables();
+    });
+
+    btnCreateFilteredSheet.addEventListener('click', () => {
+      const keyword = inputFilterKeyword.value.trim();
+      let sheetName = inputNewSheetName.value.trim();
+
+      if (!keyword && !currentSelectedCategoryId) {
+        showToast('Kata Kunci Kosong', 'Ketik kata kunci atau klik tombol merk di atas.', 'error');
+        return;
+      }
+
+      const matchedCat = DEFINED_CATEGORIES.find(c => c.id === currentSelectedCategoryId);
+
+      if (!sheetName) {
+        sheetName = cleanSheetName(matchedCat ? matchedCat.label : keyword);
+      } else {
+        sheetName = cleanSheetName(sheetName);
+      }
+
+      const assignedMap = getAssignedItemMap();
+
+      // Match items prioritizes matchedCat.match
+      const matchingItems = state.items.filter(it => {
+        if (assignedMap.has(it.id)) return false; // only take unassigned
+        if (matchedCat) return matchedCat.match(it.name);
+        return it.name.toUpperCase().includes(keyword.toUpperCase());
+      });
+
+      if (matchingItems.length === 0) {
+        showToast('Tidak Ada Barang', `Tidak ada barang belum terbagi yang cocok dengan kriteria tersebut.`, 'error');
+        return;
+      }
+
+      // Tentukan nama unik sheet terlebih dahulu sebelum simpan riwayat
+      let finalName = sheetName;
+      let counter = 2;
+      while (state.newSheets.some(s => s.name.toUpperCase() === finalName.toUpperCase())) {
+        finalName = cleanSheetName(`${sheetName} ${counter++}`);
+      }
+
+      // Simpan riwayat sebelum memodifikasi
+      saveState(`Buat sheet ${finalName}`);
+
+      const newSheetObj = {
+        id: `sheet-${Date.now()}-${Math.random().toString(36).substr(2, 4)}`,
+        name: finalName,
+        items: [...matchingItems],
+        createdAt: new Date()
+      };
+
+      state.newSheets.push(newSheetObj);
+
+      // STRICT RULE: Only turn RED for the explicitly clicked category
+      if (currentSelectedCategoryId) {
+        movedCategories.add(currentSelectedCategoryId);
+      } else if (matchedCat) {
+        movedCategories.add(matchedCat.id);
+      }
+
+      // Reset filter inputs
+      inputFilterKeyword.value = '';
+      inputNewSheetName.value = '';
+      currentSelectedCategoryId = null;
+      inputTableSearch.value = '';
+
+      renderBrandChips();
+      renderCreatedSheets();
+      renderTables();
+      updateStats();
+
+      showToast('Sheet Dibuat', `Berhasil memindahkan ${matchingItems.length} barang ke sheet "${finalName}".`, 'success');
+    });
+
+    btnAppendToExistingSheet.addEventListener('click', () => {
+      const targetSheetId = selectTargetExistingSheet.value;
+      if (!targetSheetId) {
+        showToast('Pilih Sheet', 'Silakan pilih sheet tujuan dari dropdown terlebih dahulu.', 'error');
+        return;
+      }
+
+      const targetSheet = state.newSheets.find(s => s.id === targetSheetId);
+      if (!targetSheet) return;
+
+      const keyword = inputFilterKeyword.value.trim();
+      if (!keyword) {
+        showToast('Kata Kunci Kosong', 'Ketik kata kunci atau klik merk yang ingin dimasukkan.', 'error');
+        return;
+      }
+
+      const assignedMap = getAssignedItemMap();
+      const existingIds = new Set(targetSheet.items.map(it => it.id));
+      const matchedCat = DEFINED_CATEGORIES.find(c => c.id === currentSelectedCategoryId);
+
+      const itemsToAdd = state.items.filter(it => {
+        if (existingIds.has(it.id)) return false;
+        if (assignedMap.has(it.id)) return false;
+        if (matchedCat) return matchedCat.match(it.name);
+        return it.name.toUpperCase().includes(keyword.toUpperCase());
+      });
+
+      if (itemsToAdd.length === 0) {
+        showToast('Tidak Ada Barang', 'Tidak ada barang yang cocok untuk ditambahkan ke sheet tersebut.', 'error');
+        return;
+      }
+
+      // Simpan riwayat sebelum memodifikasi
+      saveState(`Tambah data ke ${targetSheet.name}`);
+
+      itemsToAdd.forEach(it => targetSheet.items.push(it));
+
+      // Append keyword to sheet name concisely
+      let tag = matchedCat ? matchedCat.label : keyword.trim();
+      if (!targetSheet.name.toUpperCase().includes(tag.toUpperCase())) {
+        targetSheet.name = cleanSheetName(`${targetSheet.name} + ${tag}`);
+      }
+
+      if (currentSelectedCategoryId) {
+        movedCategories.add(currentSelectedCategoryId);
+      }
+
+      inputFilterKeyword.value = '';
+      inputNewSheetName.value = '';
+      currentSelectedCategoryId = null;
+
+      renderBrandChips();
+      renderCreatedSheets();
+      renderTables();
+      updateStats();
+
+      showToast('Barang Ditambahkan', `${itemsToAdd.length} barang dimasukkan ke sheet "${targetSheet.name}".`, 'success');
+    });
+
+    rangeStaffCount.addEventListener('input', () => {
+      labelStaffCount.textContent = rangeStaffCount.value;
+    });
+
+    btnAutoSplitStaff.addEventListener('click', () => {
+      const staffCount = parseInt(rangeStaffCount.value, 10);
+      const assignedMap = getAssignedItemMap();
+      const unassignedItems = state.items.filter(it => !assignedMap.has(it.id));
+
+      if (unassignedItems.length === 0) {
+        showToast('Semua Barang Terbagi', 'Tidak ada barang sisa untuk dibagi.', 'info');
+        return;
+      }
+
+      // Simpan riwayat sebelum membagi otomatis
+      saveState('Bagi rata petugas');
+
+      const itemsPerStaff = Math.ceil(unassignedItems.length / staffCount);
+      let createdCount = 0;
+
+      for (let i = 0; i < staffCount; i++) {
+        const slice = unassignedItems.slice(i * itemsPerStaff, (i + 1) * itemsPerStaff);
+        if (slice.length === 0) break;
+
+        const sheetName = cleanSheetName(`Petugas ${i + 1}`);
+        state.newSheets.push({
+          id: `staff-${Date.now()}-${i + 1}`,
+          name: sheetName,
+          items: slice,
+          createdAt: new Date()
+        });
+        createdCount++;
+      }
+
+      renderCreatedSheets();
+      renderTables();
+      updateStats();
+
+      showToast('Bagi Rata Selesai', `Berhasil membuat ${createdCount} sheet untuk petugas.`, 'success');
+    });
+
+    function renderCreatedSheets() {
+      createdSheetsGrid.innerHTML = '';
+      selectTargetExistingSheet.innerHTML = '<option value="">Pilih Sheet...</option>';
+      selectFilterSheetAssigned.innerHTML = '<option value="">Semua Sheet</option>';
+
+      if (state.newSheets.length === 0) {
+        createdSheetsGrid.innerHTML = `
+          <div class="col-span-full py-8 text-center bg-slate-50 rounded-2xl border border-dashed border-slate-200">
+            <i class="fa-solid fa-folder-open text-slate-300 text-3xl mb-2"></i>
+            <p class="text-xs text-slate-500 font-medium">Belum ada sheet yang dibuat. Pilih kategori di atas atau gunakan bagi otomatis.</p>
+          </div>
+        `;
+        return;
+      }
+
+      state.newSheets.forEach(sheet => {
+        // Populate dropdowns
+        const opt1 = document.createElement('option');
+        opt1.value = sheet.id;
+        opt1.textContent = `${sheet.name} (${sheet.items.length})`;
+        selectTargetExistingSheet.appendChild(opt1);
+
+        const opt2 = document.createElement('option');
+        opt2.value = sheet.name;
+        opt2.textContent = sheet.name;
+        selectFilterSheetAssigned.appendChild(opt2);
+
+        // Render Card
+        const card = document.createElement('div');
+        card.className = 'bg-slate-50 hover:bg-white rounded-xl p-3.5 border border-slate-200 hover:border-blue-300 transition shadow-2xs space-y-2.5 flex flex-col justify-between';
+
+        const sampleNames = sheet.items.slice(0, 2).map(it => it.name).join(', ');
+        const moreCount = sheet.items.length > 2 ? ` + ${sheet.items.length - 2} barang lain` : '';
+
+        card.innerHTML = `
+          <div>
+            <div class="flex items-start justify-between gap-2">
+              <h4 class="font-bold text-slate-800 text-xs truncate" title="${escapeHtml(sheet.name)}">
+                <i class="fa-regular fa-file-excel text-emerald-600 mr-1"></i> ${escapeHtml(sheet.name)}
+              </h4>
+              <span class="px-2 py-0.5 rounded-full bg-blue-100 text-blue-800 font-mono text-[10px] font-bold shrink-0">
+                ${sheet.items.length} item
+              </span>
+            </div>
+            <p class="text-[11px] text-slate-400 mt-1 line-clamp-1 italic">${escapeHtml(sampleNames + moreCount)}</p>
+          </div>
+
+          <div class="flex items-center gap-1.5 pt-1 border-t border-slate-200/60">
+            <button type="button" class="btn-card-add flex-1 py-1 px-2 rounded-lg bg-blue-50 hover:bg-blue-100 text-blue-700 font-semibold text-[11px] flex items-center justify-center gap-1 transition">
+              <i class="fa-solid fa-plus text-[10px]"></i> Tambah Data
+            </button>
+            <button type="button" class="btn-card-delete py-1 px-2 rounded-lg hover:bg-red-50 text-slate-400 hover:text-red-600 transition" title="Hapus sheet ini">
+              <i class="fa-regular fa-trash-can text-xs"></i>
+            </button>
+          </div>
+        `;
+
+        card.querySelector('.btn-card-add').addEventListener('click', () => {
+          openAddDataModal(sheet.id);
+        });
+
+        card.querySelector('.btn-card-delete').addEventListener('click', () => {
+          deleteSheet(sheet.id);
+        });
+
+        createdSheetsGrid.appendChild(card);
+      });
+    }
+
+    function deleteSheet(sheetId) {
+      const idx = state.newSheets.findIndex(s => s.id === sheetId);
+      if (idx === -1) return;
+
+      // Simpan riwayat sebelum menghapus sheet
+      saveState(`Hapus sheet ${state.newSheets[idx].name}`);
+
+      const removed = state.newSheets.splice(idx, 1)[0];
+      
+      removed.items.forEach(it => selectedAssignedIds.delete(it.id));
+
+      // If removed sheet matched an active category, unmark red
+      const matchedCat = DEFINED_CATEGORIES.find(c => c.label.toUpperCase() === removed.name.toUpperCase());
+      if (matchedCat) {
+        movedCategories.delete(matchedCat.id);
+      }
+
+      renderBrandChips();
+      renderCreatedSheets();
+      renderTables();
+      updateStats();
+      updateReturnSelectedButton();
+
+      showToast('Sheet Dihapus', `Sheet "${removed.name}" telah dihapus. Barang dikembalikan ke sisa.`, 'info');
+    }
+
+    btnClearAllSheets.addEventListener('click', () => {
+      if (state.newSheets.length === 0) return;
+
+      // Simpan riwayat sebelum menghapus semua sheet
+      saveState('Hapus semua sheet');
+
+      state.newSheets = [];
+      movedCategories.clear();
+      currentSelectedCategoryId = null;
+      selectedAssignedIds.clear();
+
+      renderBrandChips();
+      renderCreatedSheets();
+      renderTables();
+      updateStats();
+      updateReturnSelectedButton();
+
+      showToast('Semua Sheet Dihapus', 'Semua barang dikembalikan ke daftar belum terbagi.', 'info');
+    });
+
+    function renderTables() {
+      const assignedMap = getAssignedItemMap();
+      const searchTerm = inputTableSearch.value.trim().toLowerCase();
+      const activeCat = currentSelectedCategoryId ? DEFINED_CATEGORIES.find(c => c.id === currentSelectedCategoryId) : null;
+
+      // 1. Unassigned Table Data
+      const unassignedItems = state.items.filter(it => {
+        if (assignedMap.has(it.id)) return false; // strictly hide assigned items
+        if (activeCat) {
+          if (!activeCat.match(it.name)) return false;
+        } else if (searchTerm && !it.name.toLowerCase().includes(searchTerm)) {
+          return false;
+        }
+        return true;
+      });
+
+      unassignedTableBody.innerHTML = '';
+      if (unassignedItems.length === 0) {
+        unassignedTableBody.innerHTML = `
+          <tr>
+            <td colspan="8" class="py-6 text-center text-slate-400 italic">
+              Tidak ada barang belum terbagi yang sesuai.
+            </td>
+          </tr>
+        `;
+      } else {
+        unassignedItems.forEach((item, idx) => {
+          const row = document.createElement('tr');
+          row.className = 'hover:bg-slate-50 transition border-b border-slate-100';
+
+          const cek1Val = state.cek1Inputs[item.id] !== undefined ? state.cek1Inputs[item.id] : '';
+          let cek2Display = '';
+          let cek2Class = 'text-center font-bold';
+
+          if (cek1Val !== '') {
+            const num1 = parseFloat(cek1Val) || 0;
+            const diff = num1 - item.total;
+            if (diff === 0) {
+              cek2Display = '0';
+              cek2Class += ' text-emerald-700 bg-emerald-50';
+            } else {
+              // Difference detected: DO NOT display value, make cell solid red!
+              cek2Display = '';
+              cek2Class += ' bg-red-500 text-white';
+            }
+          }
+
+          row.innerHTML = `
+            <td class="py-2.5 px-3 text-center text-slate-400 border-r border-slate-100 font-mono">${idx + 1}</td>
+            <td class="py-2.5 px-4 font-semibold text-slate-800 border-r border-slate-100">${escapeHtml(item.name)}</td>
+            <td class="py-2.5 px-3 text-center border-r border-slate-100 text-slate-300">-</td>
+            <td class="py-2.5 px-3 text-center border-r border-slate-100 font-mono">${item.asd}</td>
+            <td class="py-2.5 px-3 text-center border-r border-slate-100 font-mono">${item.toko}</td>
+            <td class="py-2.5 px-3 text-center border-r border-slate-100 font-mono font-bold text-slate-900">${item.total}</td>
+            <td class="py-1 px-2 text-center border-r border-slate-100">
+              <input type="number" data-id="${item.id}" value="${cek1Val}" placeholder="0" class="input-cek1 w-16 text-center py-1 bg-white border border-slate-200 rounded-lg text-xs font-mono font-semibold focus:ring-2 focus:ring-blue-500 focus:outline-none">
+            </td>
+            <td class="py-2 px-3 ${cek2Class} font-mono">
+              ${cek2Display}
+            </td>
+          `;
+
+          const cek1Input = row.querySelector('.input-cek1');
+          cek1Input.addEventListener('input', (e) => {
+            state.cek1Inputs[item.id] = e.target.value;
+            renderTables();
+          });
+
+          unassignedTableBody.appendChild(row);
+        });
+      }
+
+      // 2. Assigned Table Data
+      const selectedSheetFilter = selectFilterSheetAssigned.value;
+      const assignedList = [];
+      state.newSheets.forEach(sheet => {
+        if (selectedSheetFilter && sheet.name !== selectedSheetFilter) return;
+        sheet.items.forEach(it => {
+          if (!searchTerm || it.name.toLowerCase().includes(searchTerm)) {
+            assignedList.push({ ...it, sheetName: sheet.name, sheetId: sheet.id });
+          }
+        });
+      });
+      currentDisplayedAssignedList = assignedList;
+
+      assignedTableBody.innerHTML = '';
+      if (assignedList.length === 0) {
+        assignedTableBody.innerHTML = `
+          <tr>
+            <td colspan="9" class="py-6 text-center text-slate-400 italic">
+              Belum ada barang di dalam tabel sudah dibagi.
+            </td>
+          </tr>
+        `;
+        if (chkSelectAllAssigned) chkSelectAllAssigned.checked = false;
+      } else {
+        let allChecked = true;
+        assignedList.forEach((it, idx) => {
+          const isChecked = selectedAssignedIds.has(it.id);
+          if (!isChecked) allChecked = false;
+
+          const row = document.createElement('tr');
+          row.className = `hover:bg-slate-50 transition border-b border-slate-100 ${isChecked ? 'bg-emerald-50/60' : ''}`;
+
+          row.innerHTML = `
+            <td class="py-2.5 px-2 text-center border-r border-slate-100">
+              <input type="checkbox" data-id="${it.id}" ${isChecked ? 'checked' : ''} class="chk-assigned-item rounded text-emerald-600 focus:ring-emerald-500 w-3.5 h-3.5 border-slate-300 cursor-pointer">
+            </td>
+            <td class="py-2.5 px-3 text-center text-slate-400 border-r border-slate-100 font-mono">${idx + 1}</td>
+            <td class="py-2.5 px-4 font-semibold text-slate-800 border-r border-slate-100">${escapeHtml(it.name)}</td>
+            <td class="py-2.5 px-3 text-center border-r border-slate-100">
+              <span class="px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 font-bold text-[10px]">${escapeHtml(it.sheetName)}</span>
+            </td>
+            <td class="py-2.5 px-3 text-center border-r border-slate-100 text-slate-300">-</td>
+            <td class="py-2.5 px-3 text-center border-r border-slate-100 font-mono">${it.asd}</td>
+            <td class="py-2.5 px-3 text-center border-r border-slate-100 font-mono">${it.toko}</td>
+            <td class="py-2.5 px-3 text-center border-r border-slate-100 font-mono font-bold">${it.total}</td>
+            <td class="py-2 px-3 text-center">
+              <button type="button" class="btn-return-item px-2 py-1 rounded bg-amber-50 hover:bg-amber-100 text-amber-700 text-[10px] font-bold transition">
+                Batal
+              </button>
+            </td>
+          `;
+
+          const chk = row.querySelector('.chk-assigned-item');
+          chk.addEventListener('change', (e) => {
+            if (e.target.checked) {
+              selectedAssignedIds.add(it.id);
+              row.classList.add('bg-emerald-50/60');
+            } else {
+              selectedAssignedIds.delete(it.id);
+              row.classList.remove('bg-emerald-50/60');
+            }
+            updateReturnSelectedButton();
+            if (chkSelectAllAssigned) {
+              chkSelectAllAssigned.checked = currentDisplayedAssignedList.length > 0 && currentDisplayedAssignedList.every(x => selectedAssignedIds.has(x.id));
+            }
+          });
+
+          row.querySelector('.btn-return-item').addEventListener('click', () => {
+            returnItemFromSheet(it.sheetId, it.id);
+          });
+
+          assignedTableBody.appendChild(row);
+        });
+
+        if (chkSelectAllAssigned) chkSelectAllAssigned.checked = allChecked && assignedList.length > 0;
+      }
+
+      // Update Tab Badges
+      const totalUnassigned = state.items.filter(it => !assignedMap.has(it.id)).length;
+      const totalAssigned = state.items.length - totalUnassigned;
+      badgeTabUnassigned.textContent = totalUnassigned;
+      badgeTabAssigned.textContent = totalAssigned;
+    }
+
+    function returnItemFromSheet(sheetId, itemId) {
+      const sheet = state.newSheets.find(s => s.id === sheetId);
+      if (!sheet) return;
+
+      // Simpan riwayat sebelum mengembalikan barang
+      saveState(`Kembalikan barang dari ${sheet.name}`);
+
+      sheet.items = sheet.items.filter(it => it.id !== itemId);
+      selectedAssignedIds.delete(itemId);
+
+      renderBrandChips();
+      renderCreatedSheets();
+      renderTables();
+      updateStats();
+      updateReturnSelectedButton();
+
+      showToast('Barang Dikembalikan', 'Barang kembali ke daftar belum terbagi.', 'info');
+    }
+
+    function updateReturnSelectedButton() {
+      if (!btnReturnSelected || !countReturnSelected) return;
+      if (currentActiveTab === 'assigned' && selectedAssignedIds.size > 0) {
+        btnReturnSelected.classList.remove('hidden');
+        btnReturnSelected.classList.add('flex');
+        countReturnSelected.textContent = selectedAssignedIds.size;
+      } else {
+        btnReturnSelected.classList.add('hidden');
+        btnReturnSelected.classList.remove('flex');
+      }
+    }
+
+    if (chkSelectAllAssigned) {
+      chkSelectAllAssigned.addEventListener('change', (e) => {
+        const isChecked = e.target.checked;
+        currentDisplayedAssignedList.forEach(it => {
+          if (isChecked) {
+            selectedAssignedIds.add(it.id);
+          } else {
+            selectedAssignedIds.delete(it.id);
+          }
+        });
+        renderTables();
+        updateReturnSelectedButton();
+      });
+    }
+
+    if (btnReturnSelected) {
+      btnReturnSelected.addEventListener('click', () => {
+        if (selectedAssignedIds.size === 0) return;
+        
+        saveState(`Kembalikan ${selectedAssignedIds.size} barang`);
+        
+        state.newSheets.forEach(sheet => {
+          sheet.items = sheet.items.filter(it => !selectedAssignedIds.has(it.id));
+        });
+        
+        const count = selectedAssignedIds.size;
+        selectedAssignedIds.clear();
+        if (chkSelectAllAssigned) chkSelectAllAssigned.checked = false;
+        
+        renderBrandChips();
+        renderCreatedSheets();
+        renderTables();
+        updateStats();
+        updateReturnSelectedButton();
+        
+        showToast('Barang Dikembalikan', `${count} barang kembali ke daftar belum terbagi.`, 'info');
+      });
+    }
+
+    // Tab Switching
+    tabTableUnassigned.addEventListener('click', () => {
+      currentActiveTab = 'unassigned';
+      tabTableUnassigned.className = 'px-3.5 py-2 rounded-xl font-bold text-xs bg-white text-blue-700 border border-slate-200 shadow-2xs flex items-center gap-2 transition';
+      tabTableAssigned.className = 'px-3.5 py-2 rounded-xl font-medium text-xs text-slate-600 hover:bg-white hover:text-slate-900 border border-transparent hover:border-slate-200 transition flex items-center gap-2';
+      containerUnassignedTable.classList.remove('hidden');
+      containerAssignedTable.classList.add('hidden');
+      filterSheetWrapper.classList.add('hidden');
+      renderTables();
+      updateReturnSelectedButton();
+    });
+
+    tabTableAssigned.addEventListener('click', () => {
+      currentActiveTab = 'assigned';
+      tabTableAssigned.className = 'px-3.5 py-2 rounded-xl font-bold text-xs bg-white text-emerald-700 border border-slate-200 shadow-2xs flex items-center gap-2 transition';
+      tabTableUnassigned.className = 'px-3.5 py-2 rounded-xl font-medium text-xs text-slate-600 hover:bg-white hover:text-slate-900 border border-transparent hover:border-slate-200 transition flex items-center gap-2';
+      containerAssignedTable.classList.remove('hidden');
+      containerUnassignedTable.classList.add('hidden');
+      filterSheetWrapper.classList.remove('hidden');
+      renderTables();
+      updateReturnSelectedButton();
+    });
+
+    selectFilterSheetAssigned.addEventListener('change', renderTables);
+    inputTableSearch.addEventListener('input', renderTables);
+
+    function updateStats() {
+      const assignedMap = getAssignedItemMap();
+      const total = state.items.length;
+      const unassigned = state.items.filter(it => !assignedMap.has(it.id)).length;
+      const assigned = total - unassigned;
+
+      statTotalItems.textContent = total;
+      statUnassignedItems.textContent = unassigned;
+      statAssignedItems.textContent = assigned;
+      statTotalSheets.textContent = state.newSheets.length;
+    }
+
+    function openAddDataModal(sheetId) {
+      const targetSheet = state.newSheets.find(s => s.id === sheetId);
+      if (!targetSheet) return;
+
+      activeModalSheetId = sheetId;
+      modalSelectedIds.clear();
+      modalSearchInput.value = '';
+      activeModalCategory = null;
+      modalFilterMode = 'unassigned';
+      chkModalSelectAll.checked = false;
+
+      modalSheetTargetTitle.textContent = `Target: ${targetSheet.name} (Saat ini: ${targetSheet.items.length} barang)`;
+      
+      btnModalFilterUnassigned.className = 'px-2.5 py-1 rounded-lg font-semibold bg-amber-100 text-amber-900 border border-amber-200 text-[11px]';
+      btnModalFilterAll.className = 'px-2.5 py-1 rounded-lg font-medium text-slate-600 hover:bg-slate-100 text-[11px]';
+
+      renderModalUnmovedCategories();
+      renderModalItems();
+      modalAddData.classList.remove('hidden');
+    }
+
+    function renderModalUnmovedCategories() {
+      modalUnmovedCategoriesList.innerHTML = '';
+      const assignedMap = getAssignedItemMap();
+
+      // Show ONLY categories not moved yet
+      const unmoved = DEFINED_CATEGORIES.filter(cat => {
+        if (movedCategories.has(cat.id)) return false;
+        return state.items.some(item => cat.match(item.name));
+      });
+
+      modalUnmovedCatCount.textContent = `${unmoved.length} Kategori`;
+
+      if (unmoved.length === 0) {
+        modalUnmovedCategoriesList.innerHTML = `
+          <span class="text-xs text-emerald-600 italic flex items-center gap-1 py-1">
+            <i class="fa-solid fa-circle-check"></i> Semua kategori utama sudah dipindahkan ke sheet.
+          </span>
+        `;
+        return;
+      }
+
+      unmoved.forEach(cat => {
+        const catItems = state.items.filter(it => cat.match(it.name));
+        const unassignedCount = catItems.filter(it => !assignedMap.has(it.id)).length;
+        const isSelected = activeModalCategory && activeModalCategory.id === cat.id;
+
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = isSelected 
+          ? 'px-2.5 py-1 text-[11px] font-bold bg-blue-600 text-white rounded-lg transition border border-blue-700 flex items-center gap-1.5 shrink-0 shadow-sm'
+          : 'px-2.5 py-1 text-[11px] font-medium bg-white hover:bg-blue-50 text-slate-700 rounded-lg transition border border-slate-200 flex items-center gap-1.5 shrink-0 shadow-2xs';
+
+        btn.innerHTML = `
+          <span>${escapeHtml(cat.label)}</span>
+          <span class="text-[9px] ${isSelected ? 'bg-blue-800 text-blue-100' : 'bg-slate-100 text-slate-600'} px-1.5 py-0.5 rounded-full font-mono">
+            ${unassignedCount}
+          </span>
+        `;
+
+        btn.addEventListener('click', () => {
+          if (activeModalCategory && activeModalCategory.id === cat.id) {
+            activeModalCategory = null;
+            modalSearchInput.value = '';
+          } else {
+            activeModalCategory = cat;
+            // Untuk GEA/RSA/GETRA, GREE/FLIFE, dan LAIN-LAIN jangan batasi input teks ke satu kata tunggal
+            modalSearchInput.value = (cat.id === 'cat-lain' || cat.id === 'cat-gea' || cat.id === 'cat-gree') ? '' : cat.query.trim();
+          }
+
+          renderModalUnmovedCategories();
+
+          // Auto-select all available items of this category
+          const available = getModalAvailableItems();
+          modalSelectedIds.clear();
+          available.forEach(it => modalSelectedIds.add(it.id));
+          chkModalSelectAll.checked = available.length > 0;
+
+          renderModalItems();
+        });
+
+        modalUnmovedCategoriesList.appendChild(btn);
+      });
+    }
+
+    function getModalAvailableItems() {
+      const targetSheet = state.newSheets.find(s => s.id === activeModalSheetId);
+      if (!targetSheet) return [];
+
+      const targetExistingIds = new Set(targetSheet.items.map(it => it.id));
+      const assignedMap = getAssignedItemMap();
+      const term = modalSearchInput.value.trim().toLowerCase();
+
+      return state.items.filter(item => {
+        if (targetExistingIds.has(item.id)) return false;
+        if (modalFilterMode === 'unassigned' && assignedMap.has(item.id)) return false;
+
+        // Pencocokan saat kategori aktif
+        if (activeModalCategory) {
+          if (!activeModalCategory.match(item.name)) return false;
+          // Abaikan filter teks string jika kategori adalah GEA, GREE, atau LAIN-LAIN
+          if (term && activeModalCategory.id !== 'cat-lain' && activeModalCategory.id !== 'cat-gea' && activeModalCategory.id !== 'cat-gree') {
+            if (!item.name.toLowerCase().includes(term)) return false;
+          }
+          return true;
+        }
+
+        // Pencocokan saat pencarian teks manual tanpa klik chip
+        if (term) {
+          // Jika pengguna mengetik 'gea', 'rsa', atau 'getra', ikut sertakan ketiganya
+          if (term === 'gea' || term === 'rsa' || term === 'getra') {
+            const catGea = DEFINED_CATEGORIES.find(c => c.id === 'cat-gea');
+            if (catGea) return catGea.match(item.name);
+          }
+          // Jika pengguna mengetik 'gree' atau 'flife', ikut sertakan keduanya
+          if (term === 'gree' || term === 'flife') {
+            const catGree = DEFINED_CATEGORIES.find(c => c.id === 'cat-gree');
+            if (catGree) return catGree.match(item.name);
+          }
+          return item.name.toLowerCase().includes(term);
+        }
+
+        return true;
+      });
+    }
+
+    function renderModalItems() {
+      const available = getModalAvailableItems();
+      modalItemList.innerHTML = '';
+
+      modalSelectedCounter.textContent = `${modalSelectedIds.size} barang dipilih`;
+
+      if (available.length === 0) {
+        modalItemList.innerHTML = `
+          <div class="py-8 text-center text-slate-400 text-xs italic">
+            Tidak ada barang yang memenuhi kriteria pencarian/filter.
+          </div>
+        `;
+        return;
+      }
+
+      available.forEach(item => {
+        const isChecked = modalSelectedIds.has(item.id);
+        const div = document.createElement('div');
+        div.className = `p-2.5 rounded-xl border transition flex items-center justify-between cursor-pointer select-none ${
+          isChecked ? 'bg-blue-50/80 border-blue-300' : 'bg-white border-slate-200 hover:border-slate-300'
+        }`;
+
+        div.innerHTML = `
+          <label class="flex items-center gap-2.5 flex-1 cursor-pointer">
+            <input type="checkbox" data-id="${item.id}" ${isChecked ? 'checked' : ''} class="chk-modal-item rounded text-blue-600 focus:ring-blue-500 w-4 h-4 border-slate-300">
+            <span class="text-xs font-semibold text-slate-800">${escapeHtml(item.name)}</span>
+          </label>
+          <span class="text-[11px] font-mono font-bold text-slate-500 bg-slate-100 px-2 py-0.5 rounded-md">Total: ${item.total}</span>
+        `;
+
+        const chk = div.querySelector('.chk-modal-item');
+        chk.addEventListener('change', (e) => {
+          if (e.target.checked) modalSelectedIds.add(item.id);
+          else modalSelectedIds.delete(item.id);
+          modalSelectedCounter.textContent = `${modalSelectedIds.size} barang dipilih`;
+          div.className = e.target.checked 
+            ? 'p-2.5 rounded-xl border transition flex items-center justify-between cursor-pointer select-none bg-blue-50/80 border-blue-300'
+            : 'p-2.5 rounded-xl border transition flex items-center justify-between cursor-pointer select-none bg-white border-slate-200 hover:border-slate-300';
+        });
+
+        modalItemList.appendChild(div);
+      });
+    }
+
+    chkModalSelectAll.addEventListener('change', (e) => {
+      const available = getModalAvailableItems();
+      if (e.target.checked) {
+        available.forEach(it => modalSelectedIds.add(it.id));
+      } else {
+        available.forEach(it => modalSelectedIds.delete(it.id));
+      }
+      renderModalItems();
+    });
+
+    btnModalFilterUnassigned.addEventListener('click', () => {
+      modalFilterMode = 'unassigned';
+      btnModalFilterUnassigned.className = 'px-2.5 py-1 rounded-lg font-semibold bg-amber-100 text-amber-900 border border-amber-200 text-[11px]';
+      btnModalFilterAll.className = 'px-2.5 py-1 rounded-lg font-medium text-slate-600 hover:bg-slate-100 text-[11px]';
+      renderModalItems();
+    });
+
+    btnModalFilterAll.addEventListener('click', () => {
+      modalFilterMode = 'all';
+      btnModalFilterAll.className = 'px-2.5 py-1 rounded-lg font-semibold bg-blue-100 text-blue-900 border border-blue-200 text-[11px]';
+      btnModalFilterUnassigned.className = 'px-2.5 py-1 rounded-lg font-medium text-slate-600 hover:bg-slate-100 text-[11px]';
+      renderModalItems();
+    });
+
+    modalSearchInput.addEventListener('input', () => {
+      const val = modalSearchInput.value.trim().toUpperCase();
+
+      if (activeModalCategory) {
+        if (activeModalCategory.id === 'cat-gea') {
+          // Pertahankan kategori GEA aktif jika pengguna mengetik GEA, RSA, GETRA, atau mengosongkan teks
+          if (val !== 'GEA' && val !== 'RSA' && val !== 'GETRA' && val !== '') {
+            activeModalCategory = null;
+            renderModalUnmovedCategories();
+          }
+        } else if (activeModalCategory.id === 'cat-gree') {
+          // Pertahankan kategori GREE aktif jika pengguna mengetik GREE, FLIFE, atau mengosongkan teks
+          if (val !== 'GREE' && val !== 'FLIFE' && val !== '') {
+            activeModalCategory = null;
+            renderModalUnmovedCategories();
+          }
+        } else if (val !== activeModalCategory.query.trim().toUpperCase()) {
+          activeModalCategory = null;
+          renderModalUnmovedCategories();
+        }
+      } else if (val === 'GEA' || val === 'RSA' || val === 'GETRA') {
+        const catGea = DEFINED_CATEGORIES.find(c => c.id === 'cat-gea');
+        if (catGea && !movedCategories.has(catGea.id)) {
+          activeModalCategory = catGea;
+          renderModalUnmovedCategories();
+        }
+      } else if (val === 'GREE' || val === 'FLIFE') {
+        const catGree = DEFINED_CATEGORIES.find(c => c.id === 'cat-gree');
+        if (catGree && !movedCategories.has(catGree.id)) {
+          activeModalCategory = catGree;
+          renderModalUnmovedCategories();
+        }
+      } else {
+        const matched = DEFINED_CATEGORIES.find(c => c.query.trim().toUpperCase() === val || c.label.toUpperCase() === val);
+        if (matched && !movedCategories.has(matched.id)) {
+          activeModalCategory = matched;
+          renderModalUnmovedCategories();
+        }
+      }
+      renderModalItems();
+    });
+
+    function closeAddDataModal() {
+      modalAddData.classList.add('hidden');
+      activeModalSheetId = null;
+      modalSelectedIds.clear();
+      activeModalCategory = null;
+    }
+
+    btnModalClose.addEventListener('click', closeAddDataModal);
+    btnModalCancel.addEventListener('click', closeAddDataModal);
+
+    function openDownloadModal(format = 'excel') {
+      currentExportFormat = format;
+      if (modalDownloadConfirm) {
+        if (format === 'pdf') {
+          if (modalExportIcon) modalExportIcon.className = 'w-14 h-14 rounded-2xl bg-rose-100 text-rose-600 mx-auto flex items-center justify-center text-2xl shadow-sm transition-all';
+          if (modalExportIconClass) modalExportIconClass.className = 'fa-solid fa-file-pdf';
+          if (modalExportTitle) modalExportTitle.textContent = 'Opsi Ekspor Dokumen PDF';
+          if (modalExportDesc) modalExportDesc.textContent = 'Apakah Anda ingin menampilkan angka kuantitas stok sistem pada dokumen PDF yang didownload?';
+        } else {
+          if (modalExportIcon) modalExportIcon.className = 'w-14 h-14 rounded-2xl bg-blue-100 text-blue-600 mx-auto flex items-center justify-center text-2xl shadow-sm transition-all';
+          if (modalExportIconClass) modalExportIconClass.className = 'fa-solid fa-file-excel';
+          if (modalExportTitle) modalExportTitle.textContent = 'Opsi Ekspor File Excel';
+          if (modalExportDesc) modalExportDesc.textContent = 'Apakah Anda ingin menampilkan angka kuantitas stok sistem pada file Excel yang didownload?';
+        }
+        modalDownloadConfirm.classList.remove('hidden');
+      }
+    }
+
+    function closeDownloadModal() {
+      if (modalDownloadConfirm) modalDownloadConfirm.classList.add('hidden');
+    }
+
+    if (btnDownloadCancel) {
+      btnDownloadCancel.addEventListener('click', closeDownloadModal);
+    }
+
+    if (btnExportExcel) {
+      btnExportExcel.addEventListener('click', () => {
+        if (state.items.length === 0) {
+          showToast('Data Kosong', 'Tidak ada data barang untuk diekspor.', 'error');
+          return;
+        }
+        openDownloadModal('excel');
+      });
+    }
+
+    if (btnExportPDF) {
+      btnExportPDF.addEventListener('click', () => {
+        if (state.items.length === 0) {
+          showToast('Data Kosong', 'Tidak ada data barang untuk diekspor ke PDF.', 'error');
+          return;
+        }
+        openDownloadModal('pdf');
+      });
+    }
+
+    if (btnDownloadWithNumbers) {
+      btnDownloadWithNumbers.addEventListener('click', () => {
+        closeDownloadModal();
+        if (currentExportFormat === 'pdf') {
+          executePDFExport(true);
+        } else {
+          executeExcelExport(true);
+        }
+      });
+    }
+
+    if (btnDownloadWithoutNumbers) {
+      btnDownloadWithoutNumbers.addEventListener('click', () => {
+        closeDownloadModal();
+        if (currentExportFormat === 'pdf') {
+          executePDFExport(false);
+        } else {
+          executeExcelExport(false);
+        }
+      });
+    }
+
+    async function executePDFExport(showNumbers = true) {
+      try {
+        const modeText = showNumbers ? 'angka terlihat' : 'angka disembunyikan (blind opname)';
+        showToast('Membuat PDF', `Menyiapkan dokumen PDF portrait (${modeText})...`, 'info');
+
+        const { jsPDF } = window.jspdf;
+        const doc = new jsPDF({
+          orientation: 'portrait',
+          unit: 'mm',
+          format: 'a4'
+        });
+
+        // Kumpulkan sheet yang akan dicetak (Sheet petugas/kategori + Sheet sisa)
+        const exportSheets = [...state.newSheets];
+        const assignedMap = getAssignedItemMap();
+        const unassignedItems = state.items.filter(it => !assignedMap.has(it.id));
+
+        if (unassignedItems.length > 0) {
+          exportSheets.push({
+            name: 'SHEET_UTAMA_SISA',
+            items: unassignedItems
+          });
+        }
+
+        if (exportSheets.length === 0) {
+          exportSheets.push({
+            name: 'SEMUA_BARANG',
+            items: [...state.items]
+          });
+        }
+
+        const now = new Date();
+        const dateFormatted = `${String(now.getDate()).padStart(2, '0')}/${String(now.getMonth() + 1).padStart(2, '0')}/${now.getFullYear()}`;
+        const ROWS_PER_PAGE = 60; // Maksimal 60 baris per halaman
+        let isFirstPageOfDoc = true;
+
+        exportSheets.forEach((sheetData) => {
+          const items = sheetData.items || [];
+          if (items.length === 0) return;
+
+          const totalSheetPages = Math.ceil(items.length / ROWS_PER_PAGE) || 1;
+
+          for (let pageNum = 0; pageNum < totalSheetPages; pageNum++) {
+            if (!isFirstPageOfDoc) {
+              doc.addPage();
+            }
+            isFirstPageOfDoc = false;
+
+            // Header Halaman PDF
+            doc.setFont('helvetica', 'bold');
+            doc.setFontSize(11);
+            doc.setTextColor(30, 41, 59);
+            doc.text('PT. CANDI JITU INDONESIA', 10, 10);
+
+            doc.setFont('helvetica', 'normal');
+            doc.setFontSize(7.5);
+            doc.setTextColor(100, 116, 139);
+            doc.text('Laporan Kuantitas Stok Barang Per Gudang', 10, 14.5);
+
+            // Info Sheet & Tanggal di Sebelah Kanan
+            doc.setFont('helvetica', 'bold');
+            doc.setFontSize(9.5);
+            doc.setTextColor(29, 78, 216);
+            const sheetTitleText = totalSheetPages > 1
+              ? `Sheet: ${sheetData.name} (${pageNum + 1}/${totalSheetPages})`
+              : `Sheet: ${sheetData.name}`;
+            doc.text(sheetTitleText, 200, 10, { align: 'right' });
+
+            doc.setFont('helvetica', 'normal');
+            doc.setFontSize(7.5);
+            doc.setTextColor(100, 116, 139);
+            const modeLabel = !showNumbers ? ' | Blind Opname' : '';
+            doc.text(`Tanggal: ${dateFormatted} | Total: ${items.length} Barang${modeLabel}`, 200, 14.5, { align: 'right' });
+
+            // Garis pemisah tipis di bawah header
+            doc.setDrawColor(203, 213, 225);
+            doc.setLineWidth(0.3);
+            doc.line(10, 16.5, 200, 16.5);
+
+            // Ambil hingga 60 baris untuk halaman ini
+            const sliceStart = pageNum * ROWS_PER_PAGE;
+            const sliceEnd = sliceStart + ROWS_PER_PAGE;
+            const pageItems = items.slice(sliceStart, sliceEnd);
+
+            // Hanya susun data barang asli tanpa baris kosong tambahan
+            const tableRows = pageItems.map(item => [
+              item.name,
+              '', // DISPLAY kosong
+              showNumbers ? Number(item.asd) : '',
+              showNumbers ? Number(item.toko) : '',
+              showNumbers ? Number(item.total) : ''
+            ]);
+
+            doc.autoTable({
+              startY: 18.5,
+              head: [['Nama Barang', 'DISPLAY', 'ASD TK SRG', 'TOKO SRG', 'Total Nama Gudang']],
+              body: tableRows,
+              theme: 'grid',
+              styles: {
+                font: 'helvetica',
+                fontSize: 6.5,
+                cellPadding: { top: 0.6, bottom: 0.6, left: 1.5, right: 1.5 },
+                minCellHeight: 4.15,
+                lineColor: [0, 0, 0],
+                lineWidth: 0.15,
+                textColor: [15, 23, 42],
+                valign: 'middle',
+                overflow: 'ellipsize'
+              },
+              headStyles: {
+                fillColor: [217, 225, 242], // Warna biru muda #D9E1F2
+                textColor: [0, 0, 0],
+                fontStyle: 'bold',
+                halign: 'center',
+                minCellHeight: 4.8,
+                lineColor: [0, 0, 0],
+                lineWidth: 0.2
+              },
+              columnStyles: {
+                0: { cellWidth: 86, halign: 'left', fontStyle: 'normal', overflow: 'ellipsize' }, // Nama Barang
+                1: { cellWidth: 22, halign: 'center' },                                            // DISPLAY
+                2: { cellWidth: 26, halign: 'center' },                                            // ASD TK SRG
+                3: { cellWidth: 26, halign: 'center' },                                            // TOKO SRG
+                4: { cellWidth: 30, halign: 'center', fontStyle: 'bold' }                          // Total Nama Gudang
+              },
+              margin: { left: 10, right: 10, top: 18.5, bottom: 6 },
+              pageBreak: 'avoid',
+              didDrawPage: () => {
+                const currentPage = doc.internal.getNumberOfPages();
+                doc.setFontSize(7);
+                doc.setTextColor(148, 163, 184);
+                doc.text(`Halaman ${currentPage}`, 200, 292, { align: 'right' });
+              }
+            });
+          }
+        });
+
+        const suffix = showNumbers ? 'Lengkap' : 'Blind_Opname';
+        const dateStr = `${now.getFullYear()}${String(now.getMonth() + 1).padStart(2, '0')}${String(now.getDate()).padStart(2, '0')}`;
+        doc.save(`Hasil_Bagi_Stok_Candi_Jitu_Portrait_${suffix}_${dateStr}.pdf`);
+
+        showToast('Download Berhasil', `Dokumen PDF (${showNumbers ? 'angka terlihat' : 'angka disembunyikan'}) berhasil diunduh.`, 'success');
+      } catch (err) {
+        console.error(err);
+        showToast('Gagal Ekspor PDF', 'Terjadi kendala saat menyusun file PDF.', 'error');
+      }
+    }
+
+    // Confirm addition from modal
+    btnModalConfirm.addEventListener('click', () => {
+      if (!activeModalSheetId) return;
+      const targetSheet = state.newSheets.find(s => s.id === activeModalSheetId);
+      if (!targetSheet) return;
+
+      if (modalSelectedIds.size === 0) {
+        showToast('Pilih Barang', 'Silakan pilih minimal 1 barang untuk ditambahkan.', 'error');
+        return;
+      }
+
+      // Simpan riwayat sebelum menambahkan dari modal
+      saveState(`Tambah barang ke ${targetSheet.name}`);
+
+      const existingIds = new Set(targetSheet.items.map(it => it.id));
+      let addedCount = 0;
+
+      modalSelectedIds.forEach(id => {
+        if (!existingIds.has(id)) {
+          const item = state.items.find(it => it.id === id);
+          if (item) {
+            targetSheet.items.push(item);
+            addedCount++;
+          }
+        }
+      });
+
+      // Update sheet name with clean tag
+      let tag = '';
+      if (activeModalCategory) {
+        tag = activeModalCategory.label;
+        movedCategories.add(activeModalCategory.id);
+      } else {
+        const textVal = modalSearchInput.value.trim();
+        const matched = DEFINED_CATEGORIES.find(c => {
+          if (c.id === 'cat-gea') {
+            const u = textVal.toUpperCase();
+            return u === 'GEA' || u === 'RSA' || u === 'GETRA' || u.includes('GEA');
+          }
+          if (c.id === 'cat-gree') {
+            const u = textVal.toUpperCase();
+            return u === 'GREE' || u === 'FLIFE' || u.includes('GREE');
+          }
+          return c.query.trim().toUpperCase() === textVal.toUpperCase() || c.label.toUpperCase() === textVal.toUpperCase();
+        });
+        if (matched) {
+          tag = matched.label;
+          movedCategories.add(matched.id);
+        } else if (textVal) {
+          tag = textVal;
+        }
+      }
+
+      if (tag && !targetSheet.name.toUpperCase().includes(tag.toUpperCase())) {
+        targetSheet.name = cleanSheetName(`${targetSheet.name} + ${tag}`);
+      }
+
+      closeAddDataModal();
+      renderBrandChips();
+      renderCreatedSheets();
+      renderTables();
+      updateStats();
+
+      showToast('Data Ditambahkan', `${addedCount} barang ditambahkan ke sheet "${targetSheet.name}".`, 'success');
+    });
+
+    async function executeExcelExport(showNumbers = true) {
+      if (state.items.length === 0) {
+        showToast('Data Kosong', 'Tidak ada data barang untuk diekspor.', 'error');
+        return;
+      }
+
+      try {
+        const modeText = showNumbers ? 'dengan angka terlihat' : 'dengan angka tersembunyi (font putih)';
+        showToast('Membuat Excel', `Menyiapkan file ${modeText}...`, 'info');
+
+        const workbook = new ExcelJS.Workbook();
+        workbook.creator = 'Stock Splitter Pro - PT Candi Jitu';
+        workbook.created = new Date();
+
+        // Prepare list of sheets: Created sheets + Sisa sheet
+        const exportSheets = [...state.newSheets];
+        const assignedMap = getAssignedItemMap();
+        const unassignedItems = state.items.filter(it => !assignedMap.has(it.id));
+
+        if (unassignedItems.length > 0) {
+          exportSheets.push({
+            name: 'SHEET_UTAMA_SISA',
+            items: unassignedItems
+          });
+        }
+
+        if (exportSheets.length === 0) {
+          exportSheets.push({
+            name: 'SEMUA_BARANG',
+            items: [...state.items]
+          });
+        }
+
+        // Build each sheet
+        exportSheets.forEach(sheetData => {
+          const ws = workbook.addWorksheet(cleanSheetName(sheetData.name));
+          // Pastikan gridlines Excel selalu aktif terlihat
+          ws.views = [{ showGridLines: true }];
+
+          // Row 1: Clean Headers directly at Row 1 (No annoying headers above)
+          const headers = ['Nama Barang', 'DISPLAY', 'ASD TK SRG', 'TOKO SRG', 'Total Nama Gudang', 'CEK 1', 'CEK 2'];
+          const headerRow = ws.addRow(headers);
+          headerRow.height = 25;
+
+          // Header Styling: Light Blue #D9E1F2, Bold, Solid Borders, Centered
+          for (let c = 1; c <= 7; c++) {
+            const cell = headerRow.getCell(c);
+            cell.font = { bold: true, color: { argb: 'FF000000' }, size: 10 };
+            cell.fill = {
+              type: 'pattern',
+              pattern: 'solid',
+              fgColor: { argb: 'FFD9E1F2' }
+            };
+            cell.alignment = { vertical: 'middle', horizontal: 'center' };
+            cell.border = {
+              top: { style: 'thin', color: { argb: 'FF000000' } },
+              left: { style: 'thin', color: { argb: 'FF000000' } },
+              bottom: { style: 'thin', color: { argb: 'FF000000' } },
+              right: { style: 'thin', color: { argb: 'FF000000' } }
+            };
+          }
+
+          // Set column widths
+          ws.getColumn(1).width = 42; // Nama Barang
+          ws.getColumn(2).width = 12; // DISPLAY
+          ws.getColumn(3).width = 14; // ASD TK SRG
+          ws.getColumn(4).width = 14; // TOKO SRG
+          ws.getColumn(5).width = 18; // Total Nama Gudang
+          ws.getColumn(6).width = 12; // CEK 1
+          ws.getColumn(7).width = 12; // CEK 2
+
+          // Add Data Rows
+          sheetData.items.forEach((item, idx) => {
+            const rowIndex = idx + 2; // starts at Row 2 because Row 1 is header
+            const row = ws.addRow([
+              item.name,
+              '', // DISPLAY is empty
+              Number(item.asd),
+              Number(item.toko),
+              Number(item.total),
+              '', // CEK 1 empty for physical stock entry
+              { formula: `IF(F${rowIndex}="","",IF(F${rowIndex}-E${rowIndex}=0,0,""))` } // CEK 2 formula
+            ]);
+            row.height = 20;
+
+            // Pastikan setiap sel kolom 1 sampai 7 diberi garis border hitam penuh (All Borders)
+            for (let c = 1; c <= 7; c++) {
+              const cell = row.getCell(c);
+              cell.border = {
+                top: { style: 'thin', color: { argb: 'FF000000' } },
+                left: { style: 'thin', color: { argb: 'FF000000' } },
+                bottom: { style: 'thin', color: { argb: 'FF000000' } },
+                right: { style: 'thin', color: { argb: 'FF000000' } }
+              };
+
+              if (c === 1) {
+                cell.alignment = { vertical: 'middle', horizontal: 'left' };
+                cell.font = { color: { argb: 'FF000000' } };
+              } else {
+                cell.alignment = { vertical: 'middle', horizontal: 'center' };
+                // Jika user memilih untuk menyembunyikan angka, buat warna font angka menjadi putih
+                if (!showNumbers && (c === 3 || c === 4 || c === 5)) {
+                  cell.font = { color: { argb: 'FFFFFFFF' } }; // Putih (tidak terlihat di sel putih)
+                } else {
+                  cell.font = { color: { argb: 'FF000000' } };
+                }
+              }
+            }
+          });
+
+          // Conditional Formatting for CEK 2:
+          // If CEK 1 is entered and does NOT equal Total Nama Gudang -> turn cell solid RED!
+          const lastRow = sheetData.items.length + 1;
+          if (sheetData.items.length > 0) {
+            ws.addConditionalFormatting({
+              ref: `G2:G${lastRow}`,
+              rules: [
+                {
+                  type: 'expression',
+                  formulae: ['AND(F2<>"", F2<>E2)'],
+                  style: {
+                    fill: {
+                      type: 'pattern',
+                      pattern: 'solid',
+                      bgColor: { argb: 'FFFF0000' }
+                    }
+                  }
+                }
+              ]
+            });
+          }
+        });
+
+        // Generate buffer and trigger browser download
+        const buffer = await workbook.xlsx.writeBuffer();
+        const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+        const now = new Date();
+        const dateStr = `${now.getFullYear()}${String(now.getMonth()+1).padStart(2,'0')}${String(now.getDate()).padStart(2,'0')}`;
+        const suffix = showNumbers ? 'Lengkap' : 'Blind_Opname';
+        saveAs(blob, `Hasil_Bagi_Stok_Candi_Jitu_${suffix}_${dateStr}.xlsx`);
+
+        showToast('Download Berhasil', `File Excel (${showNumbers ? 'angka terlihat' : 'angka disembunyikan'}) berhasil diunduh.`, 'success');
+      } catch (err) {
+        console.error(err);
+        showToast('Gagal Ekspor', 'Terjadi kesalahan saat membuat file Excel.', 'error');
+      }
+    }
+
+  </script>
+</body>
+</html>
