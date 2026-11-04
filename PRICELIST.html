@@ -1068,17 +1068,10 @@
 
 <!-- Script for XLSX library -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
-    <!-- Script for Socket.IO Client -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.7.4/socket.io.min.js"></script>
 
     <script>
-        // Konfigurasi API Server (Auto-Fallback)
-        let API_BASE_URL = ''; 
-        const API_URLS = [
-            'https://dreamy-tannery-stability.ngrok-free.dev', // Utama (Ngrok)
-            'https://tamukutercinta.my.id' // Cadangan (Cloudflare Tunnel/Domain Baru)
-        ];
-        const NGROK_HEADERS = { 'ngrok-skip-browser-warning': 'true' }; // Bypass Ngrok warning page
+        // Konfigurasi Google Apps Script (REST API Baru)
+        const GAS_URL = 'https://script.google.com/macros/s/AKfycbwURENJhBj0KQieRYePeAhY6NlZBKq6wIW0F8a3_hT36V-gWBiS2HyY2ezc8H0YKDY/exec';
         let isServerConnected = false;
 
         // Global variables
@@ -1317,183 +1310,135 @@
         async function initServerConnection() {
             fileUploadSection.classList.add('hidden');
             loadingIndicator.classList.remove('hidden');
-            if(loadingText) loadingText.textContent = "Mencari server yang aktif...";
+            if(loadingText) loadingText.textContent = "Mengecek koneksi ke Google Apps Script...";
 
             isServerConnected = false;
 
-            // Melakukan perulangan mencoba Ngrok, lalu Cloudflare jika gagal
-            for (const url of API_URLS) {
-                try {
-                    const serverName = url.includes('ngrok') ? 'Ngrok' : 'Cloudflare';
-                    if(loadingText) loadingText.textContent = `Menghubungkan ke ${serverName}...`;
-                    
-                    const ts = Date.now();
-                    const response = await fetch(`${url}/api/get-pricelist?_t=${ts}`, { 
-                        method: 'GET',
-                        headers: NGROK_HEADERS,
-                        cache: 'no-store' 
-                    });
+            try {
+                // Mencoba mengambil data via GET ke GAS. 
+                // Jika doGet() mengembalikan JSON Base64, data akan diproses.
+                const ts = Date.now();
+                const response = await fetch(`${GAS_URL}?action=getPricelist&_t=${ts}`, { cache: 'no-store' });
 
-                    // Jika server merespon (baik 200 OK maupun 404 Data Kosong)
-                    if (response.ok || response.status === 404) {
-                        API_BASE_URL = url; // Tetapkan URL yang berhasil
-                        isServerConnected = true;
-                        updateServerBadge(true);
-                        console.log(`Berhasil terhubung ke server: ${serverName} (${url})`);
-                        
-                        if (response.ok) {
-                            const lastModified = response.headers.get('Last-Modified');
-                            if (lastModified) {
-                                lastPricelistModified = lastModified;
-                                updateTimestampsUI('pricelist', lastModified);
-                            }
-                            
-                            const blob = await response.blob();
-                            if (blob.size > 0 && blob.type.includes('spreadsheetml')) {
-                                if(loadingText) loadingText.textContent = `Mengunduh data dari ${serverName}...`;
-                                const arrayBuffer = await blob.arrayBuffer();
-                                processPricelistBuffer(arrayBuffer, `Data Pricelist (${serverName})`, false);
-                                
-                                await fetchStockFromServer();
-                            } else {
-                                fileUploadSection.classList.remove('hidden');
-                                loadingIndicator.classList.add('hidden');
-                                showToast(`Server ${serverName} terhubung. Silakan unggah file Excel pertama Anda.`, 4000);
-                            }
-                        } else {
-                            // Status 404 (Server nyala, tapi belum ada file excel diupload)
-                            fileUploadSection.classList.remove('hidden');
-                            loadingIndicator.classList.add('hidden');
-                            showToast(`Server ${serverName} siap. Belum ada data di server, silakan unggah.`, 4000);
+                if (response.ok) {
+                    isServerConnected = true;
+                    updateServerBadge(true);
+                    console.log(`Berhasil terhubung ke server GAS`);
+                    
+                    const result = await response.json();
+                    
+                    // Asumsi response dari doGet memiliki format: { success: true, data: { base64: "...", lastModified: "..." } }
+                    if (result && result.success && result.data && result.data.base64) {
+                        if (result.data.lastModified) {
+                            updateTimestampsUI('pricelist', result.data.lastModified);
                         }
                         
-                        // Mulai Koneksi WebSocket ke URL yang berhasil aktif
-                        initSocketConnection();
-                        return; // Hentikan loop karena sudah berhasil konek
+                        // Decode Base64 string ke ArrayBuffer
+                        const binaryString = window.atob(result.data.base64);
+                        const len = binaryString.length;
+                        const bytes = new Uint8Array(len);
+                        for (let i = 0; i < len; i++) {
+                            bytes[i] = binaryString.charCodeAt(i);
+                        }
+                        
+                        if(loadingText) loadingText.textContent = `Memproses data dari Apps Script...`;
+                        processPricelistBuffer(bytes.buffer, `Data Pricelist (GAS)`);
+                        
+                        await fetchStockFromServer();
+                    } else {
+                        // Jika success = false, tampilkan pesan error dari server agar pengguna tahu alasannya
+                        fileUploadSection.classList.remove('hidden');
+                        loadingIndicator.classList.add('hidden');
+                        
+                        const errorMsg = result.message || "Server GAS siap. Belum ada data, silakan unggah.";
+                        showToast(errorMsg, 5000);
+                        console.warn("Info Server:", result);
                     }
-                } catch (error) {
-                    console.warn(`Gagal terhubung ke ${url}, mencoba server berikutnya...`);
+                } else {
+                    throw new Error("Respons HTTP bukan 200 OK");
                 }
+            } catch (error) {
+                console.error(`Error mengambil data dari GAS: `, error);
+                // Tetap set true agar pengguna bisa mencoba upload POST jika error hanya pada GET
+                isServerConnected = true; 
+                updateServerBadge(true);
+                
+                if(lastUpdateInfo) {
+                    lastUpdateInfo.classList.remove('flex');
+                    lastUpdateInfo.classList.add('hidden');
+                }
+                fileUploadSection.classList.remove('hidden');
+                loadingIndicator.classList.add('hidden');
+                
+                showToast("Server merespon, tetapi file tidak ditemukan atau akses ditolak. Silakan unggah file Excel Anda.", 5000);
             }
-
-            // Jika semua URL di dalam array gagal (Offline)
-            console.warn('Semua server (Ngrok & Cloudflare) offline atau tidak dapat dijangkau.');
-            isServerConnected = false;
-            updateServerBadge(false);
-            if(lastUpdateInfo) {
-                lastUpdateInfo.classList.remove('flex');
-                lastUpdateInfo.classList.add('hidden');
-            }
-            fileUploadSection.classList.remove('hidden');
-            loadingIndicator.classList.add('hidden');
-            showToast("Semua server offline. Beralih ke mode manual.", 5000);
         }
 
         async function fetchStockFromServer() {
             try {
                 const ts = Date.now();
-                const response = await fetch(`${API_BASE_URL}/api/get-stock?_t=${ts}`, { headers: NGROK_HEADERS, cache: 'no-store' });
+                const response = await fetch(`${GAS_URL}?action=getStock&_t=${ts}`, { cache: 'no-store' });
                 if (response.ok) {
-                    const lastModified = response.headers.get('Last-Modified');
-                    const contentLength = response.headers.get('Content-Length');
-                    
-                    if (lastModified) {
-                        lastStockModified = lastModified;
-                        updateTimestampsUI('stock', lastModified);
-                    }
-                    if (contentLength) lastStockSize = contentLength;
-
-                    const blob = await response.blob();
-                    if (blob.size > 0 && blob.type.includes('spreadsheetml')) {
-                        const arrayBuffer = await blob.arrayBuffer();
-                        processStockBuffer(arrayBuffer, false);
+                    const result = await response.json();
+                    if (result && result.success && result.data && result.data.base64) {
+                        if (result.data.lastModified) {
+                            updateTimestampsUI('stock', result.data.lastModified);
+                        }
+                        
+                        const binaryString = window.atob(result.data.base64);
+                        const len = binaryString.length;
+                        const bytes = new Uint8Array(len);
+                        for (let i = 0; i < len; i++) {
+                            bytes[i] = binaryString.charCodeAt(i);
+                        }
+                        processStockBuffer(bytes.buffer);
                         showToast('Data Real Stok berhasil dimuat dari server!', 3000);
                     }
                 }
             } catch (error) {
-                console.warn('Gagal memuat stok dari server:', error);
+                console.warn('Gagal memuat stok dari server GAS:', error);
             }
         }
 
-        // --- FUNGSI WEBSOCKET (REAL-TIME SYNC) ---
-        // Fungsi ini MENGGANTIKAN setInterval yang membuat limit Ngrok
-        function initSocketConnection() {
-            if (typeof io === 'undefined') {
-                console.warn('Socket.IO library tidak dimuat.');
-                return;
-            }
-
-            // Inisialisasi koneksi ke server, gunakan extraHeaders untuk memotong peringatan browser ngrok
-            const socket = io(API_BASE_URL, {
-                extraHeaders: NGROK_HEADERS
-            });
-
-            socket.on('connect', () => {
-                console.log('Terkoneksi ke server WebSocket');
-            });
-
-            // Listener ketika menerima broadcast update Pricelist
-            socket.on('pricelistUpdated', async (data) => {
-                showToast('🔄 Pricelist telah diupdate dari perangkat lain. Mensinkronkan...', 4000);
-                
-                try {
-                    const ts = Date.now();
-                    const dataRes = await fetch(`${API_BASE_URL}/api/get-pricelist?_t=${ts}`, { method: 'GET', headers: NGROK_HEADERS, cache: 'no-store' });
-                    if (dataRes.ok) {
-                        const blob = await dataRes.blob();
-                        const arrayBuffer = await blob.arrayBuffer();
-                        processPricelistBuffer(arrayBuffer, "Data Pricelist (Auto-Sync)", true);
-                        
-                        const newModified = dataRes.headers.get('Last-Modified');
-                        if (newModified) {
-                            lastPricelistModified = newModified;
-                            updateTimestampsUI('pricelist', newModified);
-                        }
-                    }
-                } catch(e) {
-                    console.error("Gagal sinkronisasi Pricelist via socket:", e);
-                }
-            });
-
-            // Listener ketika menerima broadcast update Stok
-            socket.on('stockUpdated', async (data) => {
-                showToast('🔄 Real Stok telah diupdate dari perangkat lain. Mensinkronkan...', 4000);
-                
-                try {
-                    const ts = Date.now();
-                    const dataRes = await fetch(`${API_BASE_URL}/api/get-stock?_t=${ts}`, { method: 'GET', headers: NGROK_HEADERS, cache: 'no-store' });
-                    if (dataRes.ok) {
-                        const blob = await dataRes.blob();
-                        const arrayBuffer = await blob.arrayBuffer();
-                        processStockBuffer(arrayBuffer, true);
-                        
-                        const newModified = dataRes.headers.get('Last-Modified');
-                        if (newModified) {
-                            lastStockModified = newModified;
-                            updateTimestampsUI('stock', newModified);
-                        }
-                    }
-                } catch(e) {
-                    console.error("Gagal sinkronisasi Stok via socket:", e);
-                }
-            });
-
-            socket.on('disconnect', () => {
-                console.warn('Terputus dari server WebSocket');
-            });
-        }
-
+        // FUNGSI UNGGAH FILE KE GOOGLE APPS SCRIPT
         async function uploadFileToServer(endpoint, file) {
-            const formData = new FormData();
-            formData.append('file', file);
+            // Kita gunakan argumen endpoint bawaan ('/api/update-pricelist' atau '/api/update-stock') untuk membedakan nama file
+            const isStock = endpoint.includes('stock');
+            const targetFileName = isStock ? 'real_stok.xlsx' : 'pricelist_terbaru.xlsx';
+
             try {
-                const response = await fetch(`${API_BASE_URL}${endpoint}`, {
-                    method: 'POST',
-                    body: formData,
+                // 1. Ubah file biner menjadi Base64 String (agar sesuai dengan GAS POST JSON)
+                const base64Data = await new Promise((resolve, reject) => {
+                    const reader = new FileReader();
+                    reader.onload = () => {
+                        // Hilangkan prefix "data:image/jpeg;base64," agar yang dikirim hanya string murni
+                        const b64 = reader.result.split(',')[1];
+                        resolve(b64);
+                    };
+                    reader.onerror = reject;
+                    reader.readAsDataURL(file);
                 });
-                return response.ok;
+
+                // 2. Susun payload JSON sesuai spesifikasi Apps Script
+                const payload = {
+                    fileName: targetFileName,
+                    mimeType: file.type || 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+                    base64: base64Data
+                };
+
+                // 3. Kirim via POST dengan header text/plain agar tidak memicu Pre-flight OPTIONS CORS error di GAS
+                const response = await fetch(GAS_URL, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'text/plain;charset=utf-8',
+                    },
+                    body: JSON.stringify(payload)
+                });
+
+                const result = await response.json();
+                return result.success;
             } catch (error) {
-                console.error(`Gagal upload ke ${endpoint}:`, error);
+                console.error(`Gagal upload ke GAS:`, error);
                 return false;
             }
         }
